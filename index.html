@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A 股行业与基金投资看板</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">A 股行业研究</p>
+        <h1>行业强弱与基金配置看板</h1>
+      </div>
+      <div class="meta">
+        <span id="dataDate">数据日期：--</span>
+        <span class="badge">研究辅助</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="control-strip" aria-label="筛选条件">
+        <div class="period-tabs" id="periodTabs">
+          <button data-period="day">日</button>
+          <button data-period="week" class="active">周</button>
+          <button data-period="month">月</button>
+          <button data-period="quarter">季</button>
+          <button data-period="year">年</button>
+        </div>
+        <label class="search">
+          <span>搜索</span>
+          <input id="searchInput" type="search" placeholder="行业、赛道、企业" />
+        </label>
+        <select id="riskSelect" aria-label="风险偏好">
+          <option value="balanced">均衡型</option>
+          <option value="conservative">稳健型</option>
+          <option value="aggressive">进取型</option>
+        </select>
+      </section>
+
+      <section class="summary-grid" aria-label="市场摘要">
+        <article>
+          <span>强势行业</span>
+          <strong id="strongSector">--</strong>
+        </article>
+        <article>
+          <span>防守方向</span>
+          <strong id="defenseSector">--</strong>
+        </article>
+        <article>
+          <span>平均热度</span>
+          <strong id="avgHeat">--</strong>
+        </article>
+        <article>
+          <span>组合建议</span>
+          <strong id="portfolioTilt">--</strong>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <div class="panel industry-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">行业排序</p>
+              <h2>强弱评分</h2>
+            </div>
+            <span id="industryCount">-- 个行业</span>
+          </div>
+          <div id="industryList" class="industry-list"></div>
+        </div>
+
+        <div class="panel detail-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">行业详情</p>
+              <h2 id="detailTitle">--</h2>
+            </div>
+            <span id="signalBadge" class="signal">--</span>
+          </div>
+          <div class="metric-grid">
+            <div><span>周期涨跌</span><strong id="detailReturn">--</strong></div>
+            <div><span>估值分位</span><strong id="detailValuation">--</strong></div>
+            <div><span>资金动量</span><strong id="detailCapital">--</strong></div>
+            <div><span>回撤风险</span><strong id="detailRisk">--</strong></div>
+          </div>
+          <div class="bar-block">
+            <div class="bar-label"><span>趋势</span><span id="trendValue">--</span></div>
+            <div class="bar"><i id="trendBar"></i></div>
+          </div>
+          <div class="split">
+            <div>
+              <h3>重点企业</h3>
+              <ul id="companyList"></ul>
+            </div>
+            <div>
+              <h3>基金赛道</h3>
+              <ul id="fundThemeList"></ul>
+            </div>
+          </div>
+          <div class="note" id="detailNote"></div>
+        </div>
+      </section>
+
+      <section class="panel fund-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">配置建议</p>
+            <h2>基金投资路线</h2>
+          </div>
+          <span id="riskLabel">均衡型</span>
+        </div>
+        <div id="allocationGrid" class="allocation-grid"></div>
+      </section>
+
+      <section class="panel disclaimer">
+        <h2>使用边界</h2>
+        <p>
+          当前页面使用示例数据展示方法论。接入真实行情和基金数据后，建议仍应作为研究辅助：
+          基金有风险，历史表现不代表未来收益，主题基金波动通常显著高于宽基基金。
+        </p>
+      </section>
+    </main>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
+

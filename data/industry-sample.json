@@ -1,0 +1,178 @@
+{
+  "asOf": "2026-05-20",
+  "industries": [
+    {
+      "id": "semiconductor",
+      "name": "半导体",
+      "theme": "科技成长",
+      "defensive": false,
+      "heat": 82,
+      "trendScore": 78,
+      "capitalScore": 74,
+      "valuationPercentile": 68,
+      "drawdownRisk": 76,
+      "returns": { "day": 1.25, "week": 4.86, "month": 9.4, "quarter": 12.7, "year": 18.6 },
+      "keyCompanies": [
+        { "name": "中芯国际", "ticker": "688981" },
+        { "name": "北方华创", "ticker": "002371" },
+        { "name": "韦尔股份", "ticker": "603501" }
+      ],
+      "fundThemes": ["半导体指数基金", "芯片 ETF 联接基金", "科技成长主动基金"],
+      "view": "高景气与国产替代逻辑较强，但估值和波动都偏高，更适合作为卫星仓分批配置。"
+    },
+    {
+      "id": "ai-computing",
+      "name": "AI 算力与通信",
+      "theme": "数字经济",
+      "defensive": false,
+      "heat": 88,
+      "trendScore": 84,
+      "capitalScore": 80,
+      "valuationPercentile": 72,
+      "drawdownRisk": 82,
+      "returns": { "day": 0.72, "week": 5.34, "month": 11.1, "quarter": 18.2, "year": 31.5 },
+      "keyCompanies": [
+        { "name": "中际旭创", "ticker": "300308" },
+        { "name": "新易盛", "ticker": "300502" },
+        { "name": "工业富联", "ticker": "601138" }
+      ],
+      "fundThemes": ["通信设备指数基金", "人工智能主题基金", "科技 ETF 联接基金"],
+      "view": "趋势强、资金关注高，但交易拥挤时回撤会很快，适合用纪律化止盈和再平衡管理。"
+    },
+    {
+      "id": "dividend",
+      "name": "红利低波",
+      "theme": "稳健现金流",
+      "defensive": true,
+      "heat": 64,
+      "trendScore": 66,
+      "capitalScore": 62,
+      "valuationPercentile": 38,
+      "drawdownRisk": 32,
+      "returns": { "day": 0.18, "week": 1.12, "month": 2.7, "quarter": 6.4, "year": 15.2 },
+      "keyCompanies": [
+        { "name": "中国神华", "ticker": "601088" },
+        { "name": "长江电力", "ticker": "600900" },
+        { "name": "中国移动", "ticker": "600941" }
+      ],
+      "fundThemes": ["红利低波指数基金", "中证红利指数基金", "央企红利主题基金"],
+      "view": "适合做权益底仓，收益弹性不一定最高，但波动和回撤通常更容易承受。"
+    },
+    {
+      "id": "innovative-drug",
+      "name": "创新药",
+      "theme": "医药成长",
+      "defensive": false,
+      "heat": 69,
+      "trendScore": 70,
+      "capitalScore": 61,
+      "valuationPercentile": 45,
+      "drawdownRisk": 68,
+      "returns": { "day": -0.16, "week": 2.35, "month": 4.8, "quarter": 8.6, "year": 9.1 },
+      "keyCompanies": [
+        { "name": "恒瑞医药", "ticker": "600276" },
+        { "name": "百济神州", "ticker": "688235" },
+        { "name": "药明康德", "ticker": "603259" }
+      ],
+      "fundThemes": ["创新药指数基金", "医药生物主题基金", "医疗健康主动基金"],
+      "view": "政策和出海定价影响大，适合长期分批观察，避免在单一事件后追高。"
+    },
+    {
+      "id": "new-energy",
+      "name": "新能源车与光伏",
+      "theme": "先进制造",
+      "defensive": false,
+      "heat": 58,
+      "trendScore": 52,
+      "capitalScore": 48,
+      "valuationPercentile": 30,
+      "drawdownRisk": 74,
+      "returns": { "day": -0.44, "week": -1.28, "month": 1.9, "quarter": -3.5, "year": -12.4 },
+      "keyCompanies": [
+        { "name": "宁德时代", "ticker": "300750" },
+        { "name": "比亚迪", "ticker": "002594" },
+        { "name": "阳光电源", "ticker": "300274" }
+      ],
+      "fundThemes": ["新能源车指数基金", "光伏产业指数基金", "高端制造主题基金"],
+      "view": "估值压力释放较多，但供给周期仍需确认，当前更适合观察右侧改善信号。"
+    },
+    {
+      "id": "consumer",
+      "name": "食品饮料与消费",
+      "theme": "内需消费",
+      "defensive": true,
+      "heat": 50,
+      "trendScore": 46,
+      "capitalScore": 42,
+      "valuationPercentile": 44,
+      "drawdownRisk": 52,
+      "returns": { "day": 0.05, "week": -0.62, "month": -1.1, "quarter": 2.1, "year": -5.7 },
+      "keyCompanies": [
+        { "name": "贵州茅台", "ticker": "600519" },
+        { "name": "五粮液", "ticker": "000858" },
+        { "name": "海天味业", "ticker": "603288" }
+      ],
+      "fundThemes": ["消费行业指数基金", "食品饮料主题基金", "消费精选主动基金"],
+      "view": "基本面修复需要居民消费和价格预期配合，适合低位跟踪，不宜单一重仓。"
+    },
+    {
+      "id": "bank-insurance",
+      "name": "银行与保险",
+      "theme": "金融价值",
+      "defensive": true,
+      "heat": 56,
+      "trendScore": 59,
+      "capitalScore": 55,
+      "valuationPercentile": 28,
+      "drawdownRisk": 36,
+      "returns": { "day": 0.22, "week": 0.86, "month": 2.2, "quarter": 4.9, "year": 11.8 },
+      "keyCompanies": [
+        { "name": "招商银行", "ticker": "600036" },
+        { "name": "中国平安", "ticker": "601318" },
+        { "name": "中国太保", "ticker": "601601" }
+      ],
+      "fundThemes": ["银行指数基金", "非银金融指数基金", "价值风格主动基金"],
+      "view": "估值较低且分红属性突出，但弹性依赖信用周期和地产风险预期改善。"
+    },
+    {
+      "id": "materials",
+      "name": "有色与化工",
+      "theme": "周期资源",
+      "defensive": false,
+      "heat": 71,
+      "trendScore": 64,
+      "capitalScore": 68,
+      "valuationPercentile": 55,
+      "drawdownRisk": 70,
+      "returns": { "day": 0.38, "week": 2.18, "month": 5.6, "quarter": 10.4, "year": 14.9 },
+      "keyCompanies": [
+        { "name": "紫金矿业", "ticker": "601899" },
+        { "name": "洛阳钼业", "ticker": "603993" },
+        { "name": "万华化学", "ticker": "600309" }
+      ],
+      "fundThemes": ["有色金属指数基金", "资源周期主题基金", "化工行业基金"],
+      "view": "商品价格和全球流动性影响明显，适合跟随价格趋势，回撤管理要严格。"
+    }
+  ],
+  "allocations": {
+    "conservative": [
+      { "role": "核心仓", "name": "沪深300 / 红利低波", "weight": "45%", "rationale": "以大盘宽基和分红资产承担权益核心，降低主题波动。" },
+      { "role": "稳健仓", "name": "中短债 / 货币基金", "weight": "35%", "rationale": "保留流动性和回撤缓冲，给未来分批买入留空间。" },
+      { "role": "增强仓", "name": "中证500 / 央企价值", "weight": "15%", "rationale": "补充中盘和价值风格，避免组合过度集中。" },
+      { "role": "卫星仓", "name": "科技或医药主题", "weight": "5%", "rationale": "只小比例参与高波动赛道，防止情绪化追涨。" }
+    ],
+    "balanced": [
+      { "role": "核心仓", "name": "沪深300 + 中证500", "weight": "45%", "rationale": "用宽基覆盖 A 股主要盈利资产，是组合的压舱部分。" },
+      { "role": "防守仓", "name": "红利低波 / 央企红利", "weight": "20%", "rationale": "用现金流资产平滑主题基金的波动。" },
+      { "role": "成长仓", "name": "半导体 / AI 算力 / 创新药", "weight": "25%", "rationale": "选择高景气赛道做卫星配置，分散到 2 到 3 个主题。" },
+      { "role": "流动仓", "name": "债基 / 货币基金", "weight": "10%", "rationale": "用于再平衡、补仓和应对短期回撤。" }
+    ],
+    "aggressive": [
+      { "role": "核心仓", "name": "沪深300 + 中证1000", "weight": "35%", "rationale": "保留基础宽基，但提高中小盘弹性。" },
+      { "role": "成长仓", "name": "AI 算力 / 半导体", "weight": "30%", "rationale": "捕捉产业趋势，但必须接受较大净值波动。" },
+      { "role": "轮动仓", "name": "创新药 / 有色 / 高端制造", "weight": "25%", "rationale": "基于行业评分滚动观察，避免所有仓位押在同一赛道。" },
+      { "role": "现金仓", "name": "货币基金", "weight": "10%", "rationale": "保留应对深度回撤的再投入能力。" }
+    ]
+  }
+}
+
