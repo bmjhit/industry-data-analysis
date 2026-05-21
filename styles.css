@@ -484,6 +484,12 @@ li {
   color: var(--muted);
 }
 
+.coverage-note {
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .allocation-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

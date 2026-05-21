@@ -5,6 +5,7 @@ const state = {
   industries: [],
   allocations: {},
   fundSummary: {},
+  candidateCoverage: {},
   backtest: null,
 };
 
@@ -79,6 +80,7 @@ async function loadData() {
   state.industries = data.industries;
   state.allocations = data.allocations;
   state.fundSummary = data.fundSummary ?? {};
+  state.candidateCoverage = data.candidateCoverage ?? {};
   state.backtest = backtest;
   state.selectedIndustryId = data.industries[0].id;
   const sourceLabel = data.isSample ? "示例" : "真实";
@@ -214,7 +216,12 @@ function renderDetail(industries) {
   document.querySelector("#fundThemeList").innerHTML = selected.fundThemes
     .map((theme) => `<li>${theme}</li>`)
     .join("");
-  const candidateFunds = rankFundsForRisk(selected.candidateFunds ?? [], state.riskProfile);
+  const riskMatchedFunds = rankFundsForRisk(selected.candidateFunds ?? [], state.riskProfile);
+  const candidateFunds = riskMatchedFunds.length
+    ? riskMatchedFunds
+    : [...(selected.candidateFunds ?? [])]
+        .map((fund) => ({ ...fund, riskAdjustedScore: fundScoreForRisk(fund, state.riskProfile) }))
+        .sort((a, b) => b.riskAdjustedScore - a.riskAdjustedScore);
   document.querySelector("#candidateFundList").innerHTML = candidateFunds.length
     ? candidateFunds
         .map(
@@ -419,6 +426,10 @@ function renderFundSummary() {
         .map((item) => `<li>${item.issue} <span class="muted">${item.count} 只</span></li>`)
         .join("")
     : "<li>暂无主要过滤问题</li>";
+  const coverage = state.candidateCoverage ?? {};
+  document.querySelector("#fundCoverage").textContent = coverage.fundRankCount
+    ? `扫描基金池 ${coverage.fundRankCount} 只；穿透扫描 ${coverage.fundScanLimit} 只；每行业最多 ${coverage.fundsPerIndustry} 只；候选 ${coverage.candidateCount} 只`
+    : "暂无候选池覆盖数据";
 }
 
 function summarizeFundsForRisk(riskProfile) {
@@ -471,7 +482,9 @@ function renderDailyRecommendations(industries) {
       finalScore: fundScoreForRisk(fund, state.riskProfile) + industry.score * 0.18,
     })),
   );
-  const picks = candidates.sort((a, b) => b.finalScore - a.finalScore).slice(0, 3);
+  const picks = uniqueByCode(candidates, "finalScore")
+    .sort((a, b) => b.finalScore - a.finalScore)
+    .slice(0, 3);
   document.querySelector("#dailyFundPicks").innerHTML = picks.length
     ? picks
         .map((fund) => {
@@ -505,7 +518,7 @@ function renderShortTermRecommendations(industries) {
       shortRiskPlan: shortTermRiskPlan(fund),
     })),
   );
-  const picks = candidates
+  const picks = uniqueByCode(candidates, "shortScore")
     .filter((fund) => ["短线优先观察", "小仓试探"].includes(fund.shortSignal))
     .sort((a, b) => b.shortScore - a.shortScore)
     .slice(0, 5);
@@ -533,6 +546,18 @@ function renderShortTermRecommendations(industries) {
         .join("")
     : '<div class="empty-state">当前没有满足短线纪律的基金</div>';
   renderBacktestSummary(picks);
+}
+
+function uniqueByCode(funds, scoreKey) {
+  const best = new Map();
+  for (const fund of funds) {
+    const code = fund.code ?? fund.name;
+    const existing = best.get(code);
+    if (!existing || (fund[scoreKey] ?? 0) > (existing[scoreKey] ?? 0)) {
+      best.set(code, fund);
+    }
+  }
+  return [...best.values()];
 }
 
 function backtestByCode(code) {

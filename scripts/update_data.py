@@ -39,6 +39,7 @@ FUND_FILTERS = {
 
 FUND_PROFILE_CACHE: dict[str, dict[str, Any]] = {}
 FUND_HOLDING_CACHE: dict[str, dict[str, Any]] = {}
+FUND_METRICS_CACHE: dict[str, dict[str, Any]] = {}
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,12 +56,24 @@ THEME_RULES = [
     ("互联网", "数字经济", ["互联网", "传媒", "游戏"]),
     ("电池", "先进制造", ["新能源", "电池", "锂电"]),
     ("光伏", "先进制造", ["光伏", "新能源"]),
+    ("乘用车", "先进制造", ["汽车", "新能源车", "智能汽车"]),
+    ("载客车", "先进制造", ["汽车", "新能源车", "高端制造"]),
+    ("客车", "先进制造", ["汽车", "新能源车", "高端制造"]),
     ("汽车", "先进制造", ["新能源车", "智能汽车", "汽车"]),
+    ("血液", "医药健康", ["生物", "医药", "医疗"]),
     ("医药", "医药健康", ["医药", "医疗", "创新药"]),
     ("医疗", "医药健康", ["医疗", "医药", "生物"]),
     ("银行", "金融价值", ["银行", "金融", "红利"]),
     ("保险", "金融价值", ["保险", "非银", "金融"]),
     ("证券", "金融价值", ["证券", "金融", "券商"]),
+    ("航空", "交通周期", ["航空", "运输", "交通"]),
+    ("机场", "交通周期", ["航空", "运输", "交通"]),
+    ("公交", "稳健现金流", ["交通", "运输", "红利"]),
+    ("玻璃", "周期制造", ["材料", "建材", "制造"]),
+    ("面板", "科技制造", ["电子", "科技", "制造"]),
+    ("机器人", "科技制造", ["机器人", "高端制造", "人工智能"]),
+    ("纺织", "内需消费", ["消费", "制造", "纺织"]),
+    ("专业服务", "行业轮动", ["服务", "专精特新", "科技"]),
     ("煤炭", "稳健现金流", ["煤炭", "红利", "资源"]),
     ("电力", "稳健现金流", ["电力", "公用事业", "红利"]),
     ("白酒", "内需消费", ["白酒", "消费", "食品饮料"]),
@@ -315,8 +328,8 @@ def fund_quality_profile(code: str) -> dict[str, Any]:
     url = f"https://fund.eastmoney.com/pingzhongdata/{code}.js"
     text = retry(
         f"fund profile js {code}",
-        lambda: requests.get(url, headers={"Referer": "https://fund.eastmoney.com/"}, timeout=12).text,
-        attempts=2,
+        lambda: requests.get(url, headers={"Referer": "https://fund.eastmoney.com/"}, timeout=8).text,
+        attempts=1,
     )
     ctx = py_mini_racer.MiniRacer()
     ctx.eval(text)
@@ -536,10 +549,14 @@ def fund_quant_metrics(code: str) -> dict[str, Any]:
 
 
 def safe_fund_quant_metrics(code: str) -> dict[str, Any]:
+    if code in FUND_METRICS_CACHE:
+        return FUND_METRICS_CACHE[code]
     try:
-        return fund_quant_metrics(code)
+        metrics = fund_quant_metrics(code)
     except Exception:
-        return {}
+        metrics = {}
+    FUND_METRICS_CACHE[code] = metrics
+    return metrics
 
 
 def fund_recommendation(metrics: dict[str, Any]) -> str:
@@ -581,8 +598,9 @@ def candidate_funds(
     fund_rank: pd.DataFrame,
     keywords: list[str],
     industry_codes: set[str] | None = None,
-    limit: int = 4,
-    exposure_scan_limit: int = 80,
+    limit: int = 8,
+    exposure_scan_limit: int = 250,
+    exposure_threshold: float = 5.0,
 ) -> list[dict[str, Any]]:
     if fund_rank.empty:
         return []
@@ -607,7 +625,7 @@ def candidate_funds(
         for _, row in broad.iterrows():
             code = str(row.get(code_col, ""))
             exposure = holding_exposure_to_industry(code, industry_codes)
-            if exposure["exposurePct"] >= 8:
+            if exposure["exposurePct"] >= exposure_threshold:
                 enriched = row.copy()
                 enriched["_match_method"] = "holding-through"
                 enriched["_exposure"] = exposure["exposurePct"]
@@ -628,7 +646,7 @@ def candidate_funds(
 
     matched = matched.copy()
     matched["近3月数值"] = pd.to_numeric(matched["近3月"], errors="coerce").fillna(-999)
-    matched = matched.sort_values("近3月数值", ascending=False).head(limit * 2)
+    matched = matched.sort_values("近3月数值", ascending=False).head(limit)
     funds = []
     for _, row in matched.iterrows():
         method = str(row.get("_match_method", "name-keyword"))
@@ -644,6 +662,51 @@ def candidate_funds(
         key=lambda fund: fund.get("prediction", {}).get("quantScore", -1) + fund.get("match", {}).get("exposurePct", 0) * 0.3,
         reverse=True,
     )[:limit]
+
+
+def expand_cached_candidates(
+    payload: dict[str, Any],
+    fund_rank: pd.DataFrame,
+    funds_per_industry: int,
+    fund_scan_limit: int,
+    exposure_threshold: float,
+) -> dict[str, Any]:
+    for industry in payload.get("industries", []):
+        key_codes = {
+            str(company.get("ticker", "")).zfill(6)
+            for company in industry.get("keyCompanies", [])
+            if str(company.get("ticker", "")).isdigit()
+        }
+        theme, keywords = theme_for(str(industry.get("name", "")))
+        industry["theme"] = theme
+        industry["fundThemes"] = [f"{keyword}相关基金" for keyword in keywords[:3]]
+        returns = industry.get("returns", {})
+        industry["view"] = make_view(
+            str(industry.get("name", "")),
+            theme,
+            clean_number(returns.get("week")),
+            clean_number(returns.get("month")),
+            clean_number(industry.get("valuationPercentile")),
+            clean_number(industry.get("drawdownRisk")),
+        )
+        expanded = candidate_funds(
+            fund_rank,
+            keywords,
+            industry_codes=key_codes,
+            limit=funds_per_industry,
+            exposure_scan_limit=fund_scan_limit,
+            exposure_threshold=max(2.0, exposure_threshold * 0.6),
+        )
+        existing = {str(fund.get("code", "")): fund for fund in industry.get("candidateFunds", [])}
+        for fund in expanded:
+            existing[str(fund.get("code", ""))] = fund
+        industry["candidateFunds"] = sorted(
+            existing.values(),
+            key=lambda fund: fund.get("prediction", {}).get("quantScore", -1)
+            + fund.get("match", {}).get("exposurePct", 0) * 0.3,
+            reverse=True,
+        )[:funds_per_industry]
+    return payload
 
 
 def enrich_fund_predictions(payload: dict[str, Any]) -> dict[str, Any]:
@@ -722,7 +785,12 @@ def append_source_note(source: str, note: str) -> str:
     return "；".join(parts)
 
 
-def build_live_data(limit: int) -> dict[str, Any]:
+def build_live_data(
+    limit: int,
+    funds_per_industry: int,
+    fund_scan_limit: int,
+    exposure_threshold: float,
+) -> dict[str, Any]:
     today = date.today()
     start = (today - timedelta(days=430)).strftime("%Y%m%d")
     end = today.strftime("%Y%m%d")
@@ -780,7 +848,14 @@ def build_live_data(limit: int) -> dict[str, Any]:
         capital_score = round(min(100, max(0, 45 + turnover * 9 + day_return * 3)), 1)
         valuation_percentile = percentile_rank(boards["总市值"], clean_number(board.get("总市值")))
         risk = drawdown_score(hist)
-        funds = candidate_funds(fund_rank, fund_keywords, industry_codes=industry_codes)
+        funds = candidate_funds(
+            fund_rank,
+            fund_keywords,
+            industry_codes=industry_codes,
+            limit=funds_per_industry,
+            exposure_scan_limit=fund_scan_limit,
+            exposure_threshold=exposure_threshold,
+        )
         fund_themes = [f"{keyword}相关基金" for keyword in fund_keywords[:3]]
 
         industries.append(
@@ -814,6 +889,14 @@ def build_live_data(limit: int) -> dict[str, Any]:
         "isSample": False,
         "industries": industries,
         "fundSummary": summarize_funds(industries),
+        "candidateCoverage": {
+            "fundRankCount": int(len(fund_rank)),
+            "industries": int(len(industries)),
+            "fundsPerIndustry": int(funds_per_industry),
+            "fundScanLimit": int(fund_scan_limit),
+            "exposureThreshold": float(exposure_threshold),
+            "candidateCount": int(sum(len(industry.get("candidateFunds", [])) for industry in industries)),
+        },
         "allocations": allocations(),
     }
 
@@ -860,15 +943,43 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Update live A-share industry dashboard data.")
     parser.add_argument("--limit", type=int, default=20, help="number of top industries to fetch")
+    parser.add_argument("--funds-per-industry", type=int, default=8, help="candidate funds retained for each industry")
+    parser.add_argument("--fund-scan-limit", type=int, default=250, help="top ranked funds scanned for holding-through matching")
+    parser.add_argument("--exposure-threshold", type=float, default=5.0, help="minimum holding exposure percent for holding-through match")
     args = parser.parse_args()
 
     try:
-        payload = build_live_data(limit=args.limit)
+        payload = build_live_data(
+            limit=args.limit,
+            funds_per_industry=args.funds_per_industry,
+            fund_scan_limit=args.fund_scan_limit,
+            exposure_threshold=args.exposure_threshold,
+        )
     except Exception:
         if not OUTPUT.exists():
             raise
         with OUTPUT.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
+        try:
+            fund_rank = retry("fund rank for cached expansion", lambda: ak.fund_open_fund_rank_em(symbol="全部"))
+            payload = expand_cached_candidates(
+                payload,
+                fund_rank,
+                funds_per_industry=args.funds_per_industry,
+                fund_scan_limit=args.fund_scan_limit,
+                exposure_threshold=args.exposure_threshold,
+            )
+            payload["candidateCoverage"] = {
+                "fundRankCount": int(len(fund_rank)),
+                "industries": int(len(payload.get("industries", []))),
+                "fundsPerIndustry": int(args.funds_per_industry),
+                "fundScanLimit": int(args.fund_scan_limit),
+                "exposureThreshold": float(args.exposure_threshold),
+                "candidateCount": int(sum(len(industry.get("candidateFunds", [])) for industry in payload.get("industries", []))),
+                "mode": "cached-industry-expansion",
+            }
+        except Exception:
+            pass
         payload = enrich_fund_predictions(payload)
         payload["source"] = append_source_note(payload["source"], CACHE_NOTE)
     write_json_atomic(OUTPUT, payload)

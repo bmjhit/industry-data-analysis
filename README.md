@@ -15,7 +15,7 @@
 
 ```bash
 python3 -m pip install -r requirements.txt
-python3 scripts/update_data.py --limit 20
+python3 scripts/update_data.py --limit 20 --funds-per-industry 12 --fund-scan-limit 120 --exposure-threshold 2.5
 python3 scripts/backtest_short_term.py
 ```
 
@@ -30,7 +30,8 @@ python3 -m http.server 4173
 ## 后续数据接入方向
 
 - A 股股票与行业行情：当前通过 AkShare 获取东方财富公开行业板块、历史行情和成分股数据。
-- 基金数据：当前通过 AkShare 获取东方财富开放式基金排行数据，并按行业关键词生成候选基金。
+- 基金数据：当前通过 AkShare 获取东方财富开放式基金排行数据，并按细分行业到基金赛道关键词、持仓穿透两条路径生成候选基金。
+- 候选池扩容：`--funds-per-industry` 控制每个行业保留候选数，`--fund-scan-limit` 控制持仓穿透扫描的基金数，`--exposure-threshold` 控制行业持仓暴露阈值。
 - 个基量化评分：基于历史净值计算 20/60/120 日动量、年化波动、最大回撤、近 60 日胜率和类 Sharpe 指标，生成上涨概率评分、风险分和综合分。
 - 基金质量过滤：加入基金规模、成立时间、基金经理任期、持仓集中度、跟踪误差等过滤与扣分项。
 - 筛选摘要：展示候选基金总数、通过数量、淘汰数量、数据不足数量和主要过滤原因。
