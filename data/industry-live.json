@@ -1,0 +1,603 @@
+{
+  "asOf": "2026-05-21",
+  "source": "AkShare 1.18.63；底层为东方财富公开行情与基金排行页面",
+  "isSample": false,
+  "industries": [
+    {
+      "id": "bk1519",
+      "name": "电动乘用车",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 83.3,
+      "trendScore": 29.1,
+      "capitalScore": 70.7,
+      "valuationPercentile": 91.7,
+      "drawdownRisk": 92.6,
+      "returns": {
+        "day": 2.41,
+        "week": -3.58,
+        "month": -8.48,
+        "quarter": -13.84,
+        "year": -22.06
+      },
+      "keyCompanies": [
+        {
+          "name": "赛力斯",
+          "ticker": "601127"
+        },
+        {
+          "name": "比亚迪",
+          "ticker": "002594"
+        },
+        {
+          "name": "北汽蓝谷",
+          "ticker": "600733"
+        }
+      ],
+      "fundThemes": [
+        "电动乘用车相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "电动乘用车属于行业轮动方向，当前仍需观察，市值分位偏高，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1597",
+      "name": "血液制品",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 52.2,
+      "trendScore": 33.3,
+      "capitalScore": 60.1,
+      "valuationPercentile": 41.7,
+      "drawdownRisk": 100,
+      "returns": {
+        "day": 1.94,
+        "week": -1.81,
+        "month": -9.37,
+        "quarter": -17.89,
+        "year": -22.69
+      },
+      "keyCompanies": [
+        {
+          "name": "派林生物",
+          "ticker": "000403"
+        },
+        {
+          "name": "天坛生物",
+          "ticker": "600161"
+        },
+        {
+          "name": "上海莱士",
+          "ticker": "002252"
+        }
+      ],
+      "fundThemes": [
+        "血液制品相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "血液制品属于行业轮动方向，当前仍需观察，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1479",
+      "name": "航空运输",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 63.0,
+      "trendScore": 36.3,
+      "capitalScore": 60.9,
+      "valuationPercentile": 66.7,
+      "drawdownRisk": 100,
+      "returns": {
+        "day": 1.57,
+        "week": -2.53,
+        "month": -5.06,
+        "quarter": -25.4,
+        "year": -4.54
+      },
+      "keyCompanies": [
+        {
+          "name": "中国东航",
+          "ticker": "600115"
+        },
+        {
+          "name": "中国国航",
+          "ticker": "601111"
+        },
+        {
+          "name": "南方航空",
+          "ticker": "600029"
+        },
+        {
+          "name": "春秋航空",
+          "ticker": "领涨股"
+        }
+      ],
+      "fundThemes": [
+        "航空运输相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "航空运输属于行业轮动方向，当前仍需观察，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1461",
+      "name": "玻璃制造",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 84.5,
+      "trendScore": 37.9,
+      "capitalScore": 90.3,
+      "valuationPercentile": 33.3,
+      "drawdownRisk": 71.6,
+      "returns": {
+        "day": 1.55,
+        "week": -2.93,
+        "month": -2.79,
+        "quarter": -15.67,
+        "year": 5.97
+      },
+      "keyCompanies": [
+        {
+          "name": "旗滨集团",
+          "ticker": "601636"
+        },
+        {
+          "name": "金晶科技",
+          "ticker": "600586"
+        },
+        {
+          "name": "南  玻Ａ",
+          "ticker": "000012"
+        }
+      ],
+      "fundThemes": [
+        "玻璃制造相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "玻璃制造属于行业轮动方向，当前仍需观察，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1531",
+      "name": "商用载客车",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 56.2,
+      "trendScore": 39.3,
+      "capitalScore": 75.8,
+      "valuationPercentile": 50.0,
+      "drawdownRisk": 56.6,
+      "returns": {
+        "day": 1.03,
+        "week": -2.08,
+        "month": -3.7,
+        "quarter": -8.46,
+        "year": -2.24
+      },
+      "keyCompanies": [
+        {
+          "name": "宇通客车",
+          "ticker": "600066"
+        },
+        {
+          "name": "曙光股份",
+          "ticker": "600303"
+        },
+        {
+          "name": "金龙汽车",
+          "ticker": "600686"
+        }
+      ],
+      "fundThemes": [
+        "商用载客车相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "商用载客车属于行业轮动方向，当前仍需观察，市值分位适中或偏低，回撤风险相对可控。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1611",
+      "name": "国有大型银行Ⅲ",
+      "theme": "金融价值",
+      "defensive": true,
+      "heat": 51.2,
+      "trendScore": 45.6,
+      "capitalScore": 49.4,
+      "valuationPercentile": 100.0,
+      "drawdownRisk": 57.6,
+      "returns": {
+        "day": 1.02,
+        "week": -0.92,
+        "month": -1.37,
+        "quarter": 2.27,
+        "year": 6.37
+      },
+      "keyCompanies": [
+        {
+          "name": "农业银行",
+          "ticker": "601288"
+        },
+        {
+          "name": "工商银行",
+          "ticker": "601398"
+        },
+        {
+          "name": "中国银行",
+          "ticker": "601988"
+        },
+        {
+          "name": "建设银行",
+          "ticker": "领涨股"
+        }
+      ],
+      "fundThemes": [
+        "银行相关基金",
+        "金融相关基金",
+        "红利相关基金"
+      ],
+      "candidateFunds": [
+        {
+          "code": "001188",
+          "name": "鹏华改革红利股票",
+          "return1m": 31.13,
+          "return3m": 35.73,
+          "return1y": 81.45,
+          "fee": "0.15%"
+        },
+        {
+          "code": "660015",
+          "name": "农银行业轮动混合A",
+          "return1m": 20.03,
+          "return3m": 31.08,
+          "return1y": 91.93,
+          "fee": "0.15%"
+        },
+        {
+          "code": "015850",
+          "name": "农银行业轮动混合C",
+          "return1m": 19.99,
+          "return3m": 30.94,
+          "return1y": 91.17,
+          "fee": "0.00%"
+        },
+        {
+          "code": "001951",
+          "name": "金鹰改革红利混合",
+          "return1m": 13.74,
+          "return3m": 27.4,
+          "return1y": 66.39,
+          "fee": "0.15%"
+        }
+      ],
+      "view": "国有大型银行Ⅲ属于金融价值方向，当前仍需观察，市值分位偏高，回撤风险相对可控。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1335",
+      "name": "面板",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 100,
+      "trendScore": 66.7,
+      "capitalScore": 100,
+      "valuationPercentile": 83.3,
+      "drawdownRisk": 48.4,
+      "returns": {
+        "day": 0.89,
+        "week": 1.56,
+        "month": 9.98,
+        "quarter": 10.42,
+        "year": 38.91
+      },
+      "keyCompanies": [
+        {
+          "name": "TCL科技",
+          "ticker": "000100"
+        },
+        {
+          "name": "京东方Ａ",
+          "ticker": "000725"
+        },
+        {
+          "name": "沃格光电",
+          "ticker": "603773"
+        }
+      ],
+      "fundThemes": [
+        "面板相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "面板属于行业轮动方向，当前仍需观察，市值分位偏高，回撤风险相对可控。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk0420",
+      "name": "航空机场",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 45.7,
+      "trendScore": 34.8,
+      "capitalScore": 57.8,
+      "valuationPercentile": 75.0,
+      "drawdownRisk": 94.6,
+      "returns": {
+        "day": 0.73,
+        "week": -2.79,
+        "month": -5.72,
+        "quarter": -22.69,
+        "year": -4.46
+      },
+      "keyCompanies": [
+        {
+          "name": "中国东航",
+          "ticker": "600115"
+        },
+        {
+          "name": "中国国航",
+          "ticker": "601111"
+        },
+        {
+          "name": "南方航空",
+          "ticker": "600029"
+        },
+        {
+          "name": "春秋航空",
+          "ticker": "领涨股"
+        }
+      ],
+      "fundThemes": [
+        "航空机场相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "航空机场属于行业轮动方向，当前仍需观察，市值分位偏高，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1484",
+      "name": "公交",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 87.5,
+      "trendScore": 58.9,
+      "capitalScore": 89.2,
+      "valuationPercentile": 16.7,
+      "drawdownRisk": 75.9,
+      "returns": {
+        "day": 0.65,
+        "week": 2.64,
+        "month": 0.78,
+        "quarter": -13.88,
+        "year": 7.1
+      },
+      "keyCompanies": [
+        {
+          "name": "大众交通",
+          "ticker": "600611"
+        },
+        {
+          "name": "海汽集团",
+          "ticker": "603069"
+        },
+        {
+          "name": "锦江在线",
+          "ticker": "600650"
+        }
+      ],
+      "fundThemes": [
+        "公交相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "公交属于行业轮动方向，当前短期强势，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1408",
+      "name": "机器人",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 100,
+      "trendScore": 97.8,
+      "capitalScore": 100,
+      "valuationPercentile": 58.3,
+      "drawdownRisk": 97.6,
+      "returns": {
+        "day": 0.53,
+        "week": 7.45,
+        "month": 21.25,
+        "quarter": 9.24,
+        "year": 12.85
+      },
+      "keyCompanies": [
+        {
+          "name": "绿的谐波",
+          "ticker": "688017"
+        },
+        {
+          "name": "埃斯顿",
+          "ticker": "002747"
+        },
+        {
+          "name": "雷赛智能",
+          "ticker": "002979"
+        }
+      ],
+      "fundThemes": [
+        "机器人相关基金"
+      ],
+      "candidateFunds": [
+        {
+          "code": "021895",
+          "name": "国投瑞银中证机器人指数发起式A",
+          "return1m": 16.47,
+          "return3m": 10.35,
+          "return1y": 35.13,
+          "fee": "0.06%"
+        },
+        {
+          "code": "018094",
+          "name": "博时中证机器人指数发起式A",
+          "return1m": 16.5,
+          "return3m": 10.31,
+          "return1y": 36.84,
+          "fee": "0.10%"
+        },
+        {
+          "code": "021896",
+          "name": "国投瑞银中证机器人指数发起式C",
+          "return1m": 16.46,
+          "return3m": 10.31,
+          "return1y": 34.92,
+          "fee": "0.00%"
+        },
+        {
+          "code": "021301",
+          "name": "银河中证机器人指数发起式A",
+          "return1m": 16.24,
+          "return3m": 10.27,
+          "return1y": 37.54,
+          "fee": "0.10%"
+        }
+      ],
+      "view": "机器人属于行业轮动方向，当前短期强势，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1347",
+      "name": "纺织鞋类制造",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 50.0,
+      "trendScore": 26.4,
+      "capitalScore": 48.4,
+      "valuationPercentile": 25.0,
+      "drawdownRisk": 100,
+      "returns": {
+        "day": 0.49,
+        "week": -2.73,
+        "month": -12.87,
+        "quarter": -26.02,
+        "year": -24.87
+      },
+      "keyCompanies": [
+        {
+          "name": "华利集团",
+          "ticker": "300979"
+        }
+      ],
+      "fundThemes": [
+        "纺织鞋类制造相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "纺织鞋类制造属于行业轮动方向，当前仍需观察，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    },
+    {
+      "id": "bk1567",
+      "name": "其他专业服务",
+      "theme": "行业轮动",
+      "defensive": false,
+      "heat": 47.5,
+      "trendScore": 59.6,
+      "capitalScore": 68.5,
+      "valuationPercentile": 8.3,
+      "drawdownRisk": 66.9,
+      "returns": {
+        "day": 0.48,
+        "week": -0.44,
+        "month": 9.09,
+        "quarter": 3.53,
+        "year": 42.13
+      },
+      "keyCompanies": [
+        {
+          "name": "零点有数",
+          "ticker": "301169"
+        },
+        {
+          "name": "安邦护卫",
+          "ticker": "603373"
+        },
+        {
+          "name": "中金辐照",
+          "ticker": "300962"
+        }
+      ],
+      "fundThemes": [
+        "其他专业服务相关基金"
+      ],
+      "candidateFunds": [],
+      "view": "其他专业服务属于行业轮动方向，当前仍需观察，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"
+    }
+  ],
+  "allocations": {
+    "conservative": [
+      {
+        "role": "核心仓",
+        "name": "沪深300 / 红利低波",
+        "weight": "45%",
+        "rationale": "以大盘宽基和分红资产承担权益核心，降低主题波动。"
+      },
+      {
+        "role": "稳健仓",
+        "name": "中短债 / 货币基金",
+        "weight": "35%",
+        "rationale": "保留流动性和回撤缓冲，给未来分批买入留空间。"
+      },
+      {
+        "role": "增强仓",
+        "name": "中证500 / 央企价值",
+        "weight": "15%",
+        "rationale": "补充中盘和价值风格，避免组合过度集中。"
+      },
+      {
+        "role": "卫星仓",
+        "name": "科技或医药主题",
+        "weight": "5%",
+        "rationale": "只小比例参与高波动赛道，防止情绪化追涨。"
+      }
+    ],
+    "balanced": [
+      {
+        "role": "核心仓",
+        "name": "沪深300 + 中证500",
+        "weight": "45%",
+        "rationale": "用宽基覆盖 A 股主要盈利资产，是组合的压舱部分。"
+      },
+      {
+        "role": "防守仓",
+        "name": "红利低波 / 央企红利",
+        "weight": "20%",
+        "rationale": "用现金流资产平滑主题基金的波动。"
+      },
+      {
+        "role": "成长仓",
+        "name": "半导体 / AI 算力 / 创新药",
+        "weight": "25%",
+        "rationale": "选择高景气赛道做卫星配置，分散到 2 到 3 个主题。"
+      },
+      {
+        "role": "流动仓",
+        "name": "债基 / 货币基金",
+        "weight": "10%",
+        "rationale": "用于再平衡、补仓和应对短期回撤。"
+      }
+    ],
+    "aggressive": [
+      {
+        "role": "核心仓",
+        "name": "沪深300 + 中证1000",
+        "weight": "35%",
+        "rationale": "保留基础宽基，但提高中小盘弹性。"
+      },
+      {
+        "role": "成长仓",
+        "name": "AI 算力 / 半导体",
+        "weight": "30%",
+        "rationale": "捕捉产业趋势，但必须接受较大净值波动。"
+      },
+      {
+        "role": "轮动仓",
+        "name": "创新药 / 有色 / 高端制造",
+        "weight": "25%",
+        "rationale": "基于行业评分滚动观察，避免所有仓位押在同一赛道。"
+      },
+      {
+        "role": "现金仓",
+        "name": "货币基金",
+        "weight": "10%",
+        "rationale": "保留应对深度回撤的再投入能力。"
+      }
+    ]
+  }
+}

@@ -48,13 +48,27 @@ const getSignal = (score) => {
 };
 
 async function loadData() {
-  const response = await fetch("./data/industry-sample.json");
-  const data = await response.json();
+  const data = await fetchDashboardData();
   state.industries = data.industries;
   state.allocations = data.allocations;
   state.selectedIndustryId = data.industries[0].id;
-  document.querySelector("#dataDate").textContent = `数据日期：${data.asOf}（示例）`;
+  const sourceLabel = data.isSample ? "示例" : "真实";
+  document.querySelector("#dataDate").textContent = `数据日期：${data.asOf}（${sourceLabel}）`;
+  document.querySelector("#dataSource").textContent = data.source ?? "本地示例数据";
   render();
+}
+
+async function fetchDashboardData() {
+  try {
+    const response = await fetch("./data/industry-live.json", { cache: "no-store" });
+    if (response.ok) {
+      return response.json();
+    }
+  } catch (error) {
+    console.warn("Live data unavailable, falling back to sample data.", error);
+  }
+  const fallback = await fetch("./data/industry-sample.json", { cache: "no-store" });
+  return fallback.json();
 }
 
 function getVisibleIndustries() {
@@ -161,6 +175,15 @@ function renderDetail(industries) {
   document.querySelector("#fundThemeList").innerHTML = selected.fundThemes
     .map((theme) => `<li>${theme}</li>`)
     .join("");
+  const candidateFunds = selected.candidateFunds ?? [];
+  document.querySelector("#candidateFundList").innerHTML = candidateFunds.length
+    ? candidateFunds
+        .map(
+          (fund) =>
+            `<li>${fund.name} <span class="muted">(${fund.code}，近3月 ${formatPercent(fund.return3m)})</span></li>`,
+        )
+        .join("")
+    : "<li>暂无匹配基金候选</li>";
   document.querySelector("#detailNote").textContent = selected.view;
 }
 

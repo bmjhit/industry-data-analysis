@@ -315,6 +315,10 @@ select {
   gap: 18px;
 }
 
+.candidate-block {
+  margin-top: 18px;
+}
+
 ul {
   margin: 0;
   padding-left: 18px;

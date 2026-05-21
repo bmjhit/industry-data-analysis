@@ -5,4 +5,4 @@ build/
 .env
 .env.*
 *.log
-
+dashboard-live-preview.png

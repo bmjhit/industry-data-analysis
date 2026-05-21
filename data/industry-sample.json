@@ -1,5 +1,7 @@
 {
   "asOf": "2026-05-20",
+  "source": "本地示例数据，用于无网络或首次运行前的界面演示",
+  "isSample": true,
   "industries": [
     {
       "id": "semiconductor",
@@ -175,4 +177,3 @@
     ]
   }
 }
-
