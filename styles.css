@@ -328,14 +328,16 @@ li {
   margin-bottom: 8px;
 }
 
-.fund-metrics {
+.fund-metrics,
+.fund-quality {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 6px;
 }
 
-.fund-metrics span {
+.fund-metrics span,
+.fund-quality span {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
@@ -345,6 +347,22 @@ li {
   background: #fff;
   color: var(--muted);
   font-size: 12px;
+}
+
+.fund-quality span {
+  background: #fbfcf9;
+}
+
+.fund-warning,
+.fund-missing {
+  margin-top: 6px;
+  color: var(--gold);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.fund-warning {
+  color: var(--red);
 }
 
 .note {

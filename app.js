@@ -184,6 +184,10 @@ function renderDetail(industries) {
             const probability = prediction.upsideProbability ?? 0;
             const risk = prediction.riskScore ?? 0;
             const score = prediction.quantScore ?? 0;
+            const quality = prediction.quality ?? {};
+            const qualityScore = quality.qualityScore ?? 0;
+            const issues = quality.filterIssues ?? [];
+            const missing = quality.missingFields ?? [];
             return `<li>
               <strong>${fund.name}</strong>
               <span class="muted">(${fund.code})</span>
@@ -191,14 +195,32 @@ function renderDetail(industries) {
                 <span>上涨概率 ${probability.toFixed(1)}%</span>
                 <span>风险 ${risk.toFixed(1)}/100</span>
                 <span>综合 ${score.toFixed(1)}</span>
+                <span>质量 ${qualityScore.toFixed(1)}</span>
                 <span>${fund.recommendation ?? "观察"}</span>
               </div>
+              <div class="fund-quality">
+                <span>规模 ${formatNullable(quality.scaleYi, "亿")}</span>
+                <span>成立 ${quality.inceptionDate ?? "--"}</span>
+                <span>经理 ${formatManagers(quality.managerNames)}</span>
+                <span>前十大 ${formatNullable(quality.top10HoldingPct, "%")}</span>
+                <span>跟踪误差 ${formatNullable(quality.trackingError, "%")}</span>
+              </div>
+              ${issues.length ? `<p class="fund-warning">过滤原因：${issues.join("；")}</p>` : ""}
+              ${missing.length ? `<p class="fund-missing">缺失字段：${missing.join("、")}</p>` : ""}
             </li>`;
           },
         )
         .join("")
     : "<li>暂无匹配基金候选</li>";
   document.querySelector("#detailNote").textContent = selected.view;
+}
+
+function formatNullable(value, suffix) {
+  return Number.isFinite(value) ? `${value.toFixed(2)}${suffix}` : "--";
+}
+
+function formatManagers(names = []) {
+  return names.length ? names.join("、") : "--";
 }
 
 function renderAllocations() {

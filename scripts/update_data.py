@@ -23,12 +23,29 @@ from typing import Any, Callable
 
 import akshare as ak
 import pandas as pd
+import py_mini_racer
+import requests
+
+
+FUND_FILTERS = {
+    "minScaleYi": 0.5,
+    "maxScaleYi": 300.0,
+    "minAgeDays": 180,
+    "maxTop10HoldingPct": 70.0,
+    "maxSingleHoldingPct": 15.0,
+    "maxTrackingError": 20.0,
+    "minManagerYears": 1.0,
+}
+
+FUND_PROFILE_CACHE: dict[str, dict[str, Any]] = {}
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "industry-live.json"
 
 SOURCE_NOTE = "AkShare 1.18.63；底层为东方财富公开行情与基金排行页面"
+FUND_REFRESH_NOTE = "个基量化预测已刷新"
+CACHE_NOTE = "行业数据沿用上次成功缓存"
 
 THEME_RULES = [
     ("半导体", "科技成长", ["半导体", "芯片", "集成电路"]),
@@ -140,6 +157,233 @@ def max_drawdown_percent(close: pd.Series, sessions: int = 180) -> float:
     return abs(float(((close / running_high) - 1).min() * 100))
 
 
+def parse_work_years(value: str) -> float | None:
+    if not value:
+        return None
+    years = 0.0
+    if "年" in value:
+        try:
+            years = float(value.split("年", 1)[0])
+        except ValueError:
+            years = 0.0
+    if "天" in value:
+        try:
+            day_part = value.split("又")[-1].split("天", 1)[0]
+            years += float(day_part) / 365
+        except ValueError:
+            pass
+    return round(years, 2)
+
+
+def js_date_to_iso(timestamp_ms: Any) -> str | None:
+    try:
+        return pd.to_datetime(int(timestamp_ms), unit="ms", utc=True).tz_convert("Asia/Shanghai").date().isoformat()
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def annual_tracking_error(series_list: list[dict[str, Any]]) -> float | None:
+    if len(series_list) < 2:
+        return None
+    fund_data = series_list[0].get("data", [])
+    benchmark_data = series_list[-1].get("data", [])
+    if len(fund_data) < 20 or len(benchmark_data) < 20:
+        return None
+    fund = pd.DataFrame(fund_data, columns=["date", "return"])
+    benchmark = pd.DataFrame(benchmark_data, columns=["date", "return"])
+    merged = fund.merge(benchmark, on="date", suffixes=("_fund", "_benchmark"))
+    if len(merged) < 20:
+        return None
+    fund_level = 1 + pd.to_numeric(merged["return_fund"], errors="coerce") / 100
+    benchmark_level = 1 + pd.to_numeric(merged["return_benchmark"], errors="coerce") / 100
+    active_return = fund_level.pct_change() - benchmark_level.pct_change()
+    active_return = active_return.dropna().tail(120)
+    if active_return.empty:
+        return None
+    return round(float(active_return.std() * math.sqrt(252) * 100), 2)
+
+
+def latest_holding_concentration(code: str) -> dict[str, Any]:
+    current_year = str(date.today().year)
+    previous_year = str(date.today().year - 1)
+    for year in [current_year, previous_year]:
+        try:
+            holdings = retry(
+                f"fund holding {code} {year}",
+                lambda year=year: ak.fund_portfolio_hold_em(symbol=code, date=year),
+                attempts=2,
+            )
+        except Exception:
+            continue
+        if holdings.empty or "占净值比例" not in holdings:
+            continue
+        latest_quarter = str(holdings["季度"].iloc[-1]) if "季度" in holdings else year
+        latest = holdings[holdings["季度"] == latest_quarter] if "季度" in holdings else holdings
+        weights = pd.to_numeric(latest["占净值比例"], errors="coerce").dropna().sort_values(ascending=False)
+        if weights.empty:
+            continue
+        return {
+            "report": latest_quarter,
+            "top10HoldingPct": round(float(weights.head(10).sum()), 2),
+            "largestHoldingPct": round(float(weights.iloc[0]), 2),
+            "holdingCount": int(len(weights)),
+        }
+    return {}
+
+
+def fund_quality_profile(code: str) -> dict[str, Any]:
+    if code in FUND_PROFILE_CACHE:
+        return FUND_PROFILE_CACHE[code]
+
+    url = f"https://fund.eastmoney.com/pingzhongdata/{code}.js"
+    text = retry(
+        f"fund profile js {code}",
+        lambda: requests.get(url, headers={"Referer": "https://fund.eastmoney.com/"}, timeout=12).text,
+        attempts=2,
+    )
+    ctx = py_mini_racer.MiniRacer()
+    ctx.eval(text)
+
+    profile: dict[str, Any] = {
+        "scaleYi": None,
+        "inceptionDate": None,
+        "ageDays": None,
+        "managerNames": [],
+        "managerMaxYears": None,
+        "managerFundSizeYi": None,
+        "managerTrackingAbility": None,
+        "trackingError": None,
+        "top10HoldingPct": None,
+        "largestHoldingPct": None,
+        "holdingReport": None,
+        "qualityScore": 100.0,
+        "filterPassed": True,
+        "filterIssues": [],
+        "missingFields": [],
+    }
+
+    try:
+        scale = ctx.execute("Data_fluctuationScale")
+        series = scale.get("series", [])
+        if series:
+            profile["scaleYi"] = clean_number(series[-1].get("y"), default=None)
+    except Exception:
+        pass
+
+    try:
+        nav = ctx.execute("Data_netWorthTrend")
+        if nav:
+            inception = js_date_to_iso(nav[0].get("x"))
+            profile["inceptionDate"] = inception
+            if inception:
+                profile["ageDays"] = (date.today() - date.fromisoformat(inception)).days
+    except Exception:
+        pass
+
+    try:
+        managers = ctx.execute("Data_currentFundManager")
+        if managers:
+            names = []
+            years = []
+            fund_sizes = []
+            tracking_scores = []
+            for manager in managers:
+                names.append(str(manager.get("name", "")))
+                parsed_years = parse_work_years(str(manager.get("workTime", "")))
+                if parsed_years is not None:
+                    years.append(parsed_years)
+                fund_size = str(manager.get("fundSize", "")).split("亿", 1)[0]
+                if fund_size:
+                    fund_sizes.append(clean_number(fund_size))
+                power = manager.get("power", {})
+                categories = power.get("categories", [])
+                data = power.get("data", [])
+                if "跟踪误差" in categories:
+                    index = categories.index("跟踪误差")
+                    if index < len(data):
+                        tracking_scores.append(clean_number(data[index]))
+            profile["managerNames"] = [name for name in names if name]
+            profile["managerMaxYears"] = max(years) if years else None
+            profile["managerFundSizeYi"] = max(fund_sizes) if fund_sizes else None
+            profile["managerTrackingAbility"] = max(tracking_scores) if tracking_scores else None
+    except Exception:
+        pass
+
+    try:
+        profile["trackingError"] = annual_tracking_error(ctx.execute("Data_grandTotal"))
+    except Exception:
+        pass
+
+    concentration = latest_holding_concentration(code)
+    if concentration:
+        profile["holdingReport"] = concentration.get("report")
+        profile["top10HoldingPct"] = concentration.get("top10HoldingPct")
+        profile["largestHoldingPct"] = concentration.get("largestHoldingPct")
+        profile["holdingCount"] = concentration.get("holdingCount")
+
+    profile = apply_quality_filters(profile)
+    FUND_PROFILE_CACHE[code] = profile
+    return profile
+
+
+def apply_quality_filters(profile: dict[str, Any]) -> dict[str, Any]:
+    issues = []
+    missing = []
+    score = 100.0
+
+    checks = [
+        ("scaleYi", "规模"),
+        ("ageDays", "成立时间"),
+        ("managerMaxYears", "基金经理任期"),
+        ("top10HoldingPct", "持仓集中度"),
+        ("trackingError", "跟踪误差"),
+    ]
+    for key, label in checks:
+        if profile.get(key) is None:
+            missing.append(label)
+            score -= 5
+
+    scale = profile.get("scaleYi")
+    if scale is not None:
+        if scale < FUND_FILTERS["minScaleYi"]:
+            issues.append(f"规模过小：{scale:.2f}亿")
+            score -= 35
+        elif scale > FUND_FILTERS["maxScaleYi"]:
+            issues.append(f"规模过大：{scale:.2f}亿")
+            score -= 12
+
+    age_days = profile.get("ageDays")
+    if age_days is not None and age_days < FUND_FILTERS["minAgeDays"]:
+        issues.append(f"成立时间不足：{age_days}天")
+        score -= 30
+
+    manager_years = profile.get("managerMaxYears")
+    if manager_years is not None and manager_years < FUND_FILTERS["minManagerYears"]:
+        issues.append(f"基金经理任期偏短：{manager_years:.1f}年")
+        score -= 18
+
+    top10 = profile.get("top10HoldingPct")
+    if top10 is not None and top10 > FUND_FILTERS["maxTop10HoldingPct"]:
+        issues.append(f"前十大持仓集中：{top10:.1f}%")
+        score -= (top10 - FUND_FILTERS["maxTop10HoldingPct"]) * 1.2
+
+    largest = profile.get("largestHoldingPct")
+    if largest is not None and largest > FUND_FILTERS["maxSingleHoldingPct"]:
+        issues.append(f"单一持仓偏高：{largest:.1f}%")
+        score -= (largest - FUND_FILTERS["maxSingleHoldingPct"]) * 2
+
+    tracking_error = profile.get("trackingError")
+    if tracking_error is not None and tracking_error > FUND_FILTERS["maxTrackingError"]:
+        issues.append(f"跟踪误差偏高：{tracking_error:.1f}%")
+        score -= (tracking_error - FUND_FILTERS["maxTrackingError"]) * 1.5
+
+    profile["filterIssues"] = issues
+    profile["missingFields"] = missing
+    profile["filterPassed"] = not issues
+    profile["qualityScore"] = round(clamp(score), 1)
+    return profile
+
+
 def fund_quant_metrics(code: str) -> dict[str, Any]:
     nav = retry(
         f"fund nav {code}",
@@ -177,7 +421,20 @@ def fund_quant_metrics(code: str) -> dict[str, Any]:
         95,
     )
     risk_score = clamp(volatility * 0.85 + drawdown * 1.35 + max(0, -momentum_60) * 0.9)
-    quant_score = clamp(upside_probability * 0.55 + (100 - risk_score) * 0.35 + consistency * 0.10)
+    profile = {}
+    try:
+        profile = fund_quality_profile(code)
+    except Exception:
+        profile = {"qualityScore": 70.0, "filterPassed": False, "filterIssues": ["详情数据获取失败"], "missingFields": []}
+    quality_score = clean_number(profile.get("qualityScore"), default=70.0)
+    if not profile.get("filterPassed", False):
+        risk_score = clamp(risk_score + 10)
+    quant_score = clamp(
+        upside_probability * 0.45
+        + (100 - risk_score) * 0.25
+        + consistency * 0.08
+        + quality_score * 0.22
+    )
 
     return {
         "upsideProbability": round(upside_probability, 1),
@@ -192,6 +449,7 @@ def fund_quant_metrics(code: str) -> dict[str, Any]:
         "sharpeLike": round(sharpe_like, 2),
         "sampleDays": int(len(returns)),
         "model": "momentum-risk-v1",
+        "quality": profile,
     }
 
 
@@ -205,6 +463,9 @@ def safe_fund_quant_metrics(code: str) -> dict[str, Any]:
 def fund_recommendation(metrics: dict[str, Any]) -> str:
     if not metrics:
         return "数据不足"
+    quality = metrics.get("quality", {})
+    if quality and not quality.get("filterPassed", True):
+        return "过滤淘汰"
     probability = metrics["upsideProbability"]
     risk = metrics["riskScore"]
     if probability >= 65 and risk <= 45:
@@ -272,8 +533,18 @@ def enrich_fund_predictions(payload: dict[str, Any]) -> dict[str, Any]:
             key=lambda fund: fund.get("prediction", {}).get("quantScore", -1),
             reverse=True,
         )
-    payload["source"] = f"{payload.get('source', SOURCE_NOTE)}；个基量化预测已刷新"
+    payload["source"] = append_source_note(payload.get("source", SOURCE_NOTE), FUND_REFRESH_NOTE)
     return payload
+
+
+def append_source_note(source: str, note: str) -> str:
+    parts = []
+    for part in str(source).split("；"):
+        if part and part not in parts:
+            parts.append(part)
+    if note not in parts:
+        parts.append(note)
+    return "；".join(parts)
 
 
 def build_live_data(limit: int) -> dict[str, Any]:
@@ -421,7 +692,7 @@ def main() -> None:
         with OUTPUT.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
         payload = enrich_fund_predictions(payload)
-        payload["source"] = f"{payload['source']}；行业数据沿用上次成功缓存"
+        payload["source"] = append_source_note(payload["source"], CACHE_NOTE)
     write_json_atomic(OUTPUT, payload)
     print(f"wrote {OUTPUT} with {len(payload['industries'])} industries")
     print(f"source: {payload['source']}")
