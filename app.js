@@ -302,6 +302,62 @@ function holdingPeriodForFund(fund, riskProfile, industry) {
   return "3-9 个月";
 }
 
+function shortTermScore(fund, industry) {
+  const prediction = fund.prediction ?? {};
+  const quality = prediction.quality ?? {};
+  const match = fund.match ?? {};
+  const momentum20 = prediction.momentum20 ?? 0;
+  const momentum60 = prediction.momentum60 ?? 0;
+  const winRate = prediction.winRate ?? 0;
+  const risk = prediction.riskScore ?? 100;
+  const drawdown = prediction.maxDrawdown ?? 100;
+  const qualityScore = quality.qualityScore ?? 0;
+  const exposure = match.exposurePct ?? 0;
+  const industryReturn = industry.returns?.week ?? 0;
+
+  return (
+    momentum20 * 1.35 +
+    momentum60 * 0.45 +
+    (winRate - 50) * 0.55 +
+    industry.score * 0.24 +
+    industryReturn * 1.1 +
+    qualityScore * 0.10 +
+    exposure * 0.18 -
+    risk * 0.38 -
+    drawdown * 0.42
+  );
+}
+
+function shortTermSignal(fund, industry) {
+  const prediction = fund.prediction ?? {};
+  const quality = prediction.quality ?? {};
+  if (quality.filterPassed === false) return "不适合短线";
+  if ((prediction.riskScore ?? 100) > 58) return "风险偏高";
+  if ((prediction.momentum20 ?? 0) <= 0) return "等待转强";
+  if ((prediction.winRate ?? 0) < 52) return "胜率不足";
+  const score = shortTermScore(fund, industry);
+  if (score >= 38) return "短线优先观察";
+  if (score >= 26) return "小仓试探";
+  return "暂不介入";
+}
+
+function shortTermHoldingPlan(fund) {
+  const prediction = fund.prediction ?? {};
+  const momentum20 = prediction.momentum20 ?? 0;
+  const risk = prediction.riskScore ?? 100;
+  if (momentum20 >= 18 && risk <= 45) return "2-4 周";
+  if (momentum20 >= 8 && risk <= 55) return "3-6 周";
+  return "1-3 周观察";
+}
+
+function shortTermRiskPlan(fund) {
+  const prediction = fund.prediction ?? {};
+  const risk = prediction.riskScore ?? 100;
+  if (risk <= 40) return "回撤 4%-6% 复核";
+  if (risk <= 55) return "回撤 3%-5% 复核";
+  return "回撤 3% 内严格复核";
+}
+
 function formatNullable(value, suffix) {
   return Number.isFinite(value) ? `${value.toFixed(2)}${suffix}` : "--";
 }
@@ -425,6 +481,46 @@ function renderDailyRecommendations(industries) {
     : '<div class="empty-state">当前风险偏好下暂无满足条件的推荐基金</div>';
 }
 
+function renderShortTermRecommendations(industries) {
+  const candidates = industries.flatMap((industry) =>
+    rankFundsForRisk(industry.candidateFunds ?? [], state.riskProfile).map((fund) => ({
+      ...fund,
+      industryName: industry.name,
+      shortScore: shortTermScore(fund, industry),
+      shortSignal: shortTermSignal(fund, industry),
+      shortPeriod: shortTermHoldingPlan(fund),
+      shortRiskPlan: shortTermRiskPlan(fund),
+    })),
+  );
+  const picks = candidates
+    .filter((fund) => ["短线优先观察", "小仓试探"].includes(fund.shortSignal))
+    .sort((a, b) => b.shortScore - a.shortScore)
+    .slice(0, 5);
+
+  document.querySelector("#shortTermPicks").innerHTML = picks.length
+    ? picks
+        .map((fund) => {
+          const prediction = fund.prediction ?? {};
+          return `
+            <article class="short-card">
+              <div>
+                <span>${fund.industryName}</span>
+                <strong>${fund.name}</strong>
+              </div>
+              <div class="fund-metrics">
+                <span>${fund.shortSignal}</span>
+                <span>短线分 ${fund.shortScore.toFixed(1)}</span>
+                <span>20日 ${formatPercent(prediction.momentum20 ?? 0)}</span>
+                <span>胜率 ${(prediction.winRate ?? 0).toFixed(1)}%</span>
+              </div>
+              <p>建议持有：${fund.shortPeriod}；${fund.shortRiskPlan}</p>
+            </article>
+          `;
+        })
+        .join("")
+    : '<div class="empty-state">当前没有满足短线纪律的基金</div>';
+}
+
 function render() {
   const industries = getVisibleIndustries();
   renderSummary(industries);
@@ -433,6 +529,7 @@ function render() {
   renderAllocations();
   renderFundSummary();
   renderDailyRecommendations(industries);
+  renderShortTermRecommendations(industries);
 }
 
 document.querySelector("#periodTabs").addEventListener("click", (event) => {
