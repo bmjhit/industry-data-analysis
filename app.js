@@ -214,6 +214,8 @@ function renderDetail(industries) {
             const qualityScore = quality.qualityScore ?? 0;
             const issues = quality.filterIssues ?? [];
             const missing = quality.missingFields ?? [];
+            const match = fund.match ?? {};
+            const matchedStocks = match.matchedStocks ?? [];
             return `<li>
               <strong>${fund.name}</strong>
               <span class="muted">(${fund.code})</span>
@@ -232,6 +234,18 @@ function renderDetail(industries) {
                 <span>跟踪误差 ${formatNullable(quality.trackingError, "%")}</span>
                 <span>基准 ${quality.trackingBenchmark ?? "--"}</span>
               </div>
+              <div class="fund-quality">
+                <span>匹配 ${matchLabel(match.method)}</span>
+                <span>行业暴露 ${formatNullable(match.exposurePct, "%")}</span>
+                <span>持仓期 ${match.holdingReport ?? "--"}</span>
+              </div>
+              ${
+                matchedStocks.length
+                  ? `<p class="fund-missing">命中持仓：${matchedStocks
+                      .map((stock) => `${stock.stockName}${stock.weight ? ` ${stock.weight.toFixed(1)}%` : ""}`)
+                      .join("、")}</p>`
+                  : ""
+              }
               ${issues.length ? `<p class="fund-warning">过滤原因：${issues.join("；")}</p>` : ""}
               ${missing.length ? `<p class="fund-missing">缺失字段：${missing.join("、")}</p>` : ""}
               <p class="fund-missing">建议周期：${holdingPeriodForFund(fund, state.riskProfile, selected)}</p>
@@ -294,6 +308,12 @@ function formatNullable(value, suffix) {
 
 function formatManagers(names = []) {
   return names.length ? names.join("、") : "--";
+}
+
+function matchLabel(method) {
+  if (method === "holding-through") return "持仓穿透";
+  if (method === "name-keyword") return "名称匹配";
+  return "--";
 }
 
 function renderAllocations() {

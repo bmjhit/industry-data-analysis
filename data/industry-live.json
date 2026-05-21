@@ -276,7 +276,13 @@
               "holdingCount": 10
             }
           },
-          "recommendation": "优先观察"
+          "recommendation": "优先观察",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 0,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": []
+          }
         },
         {
           "code": "001188",
@@ -323,7 +329,13 @@
               "holdingCount": 10
             }
           },
-          "recommendation": "过滤淘汰"
+          "recommendation": "过滤淘汰",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 0,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": []
+          }
         },
         {
           "code": "001951",
@@ -371,7 +383,13 @@
               "holdingCount": 10
             }
           },
-          "recommendation": "过滤淘汰"
+          "recommendation": "过滤淘汰",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 0,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": []
+          }
         },
         {
           "code": "015850",
@@ -418,7 +436,13 @@
               "holdingCount": 10
             }
           },
-          "recommendation": "过滤淘汰"
+          "recommendation": "过滤淘汰",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 0,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": []
+          }
         }
       ],
       "view": "国有大型银行Ⅲ属于金融价值方向，当前仍需观察，市值分位偏高，回撤风险相对可控。基金配置建议以分批、限额和再平衡为主。"
@@ -616,7 +640,19 @@
               "holdingCount": 15
             }
           },
-          "recommendation": "可小额配置"
+          "recommendation": "可小额配置",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 2.93,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": [
+              {
+                "stockCode": "688017",
+                "stockName": "绿的谐波",
+                "weight": 2.93
+              }
+            ]
+          }
         },
         {
           "code": "018094",
@@ -661,7 +697,19 @@
               "holdingCount": 10
             }
           },
-          "recommendation": "可小额配置"
+          "recommendation": "可小额配置",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 2.99,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": [
+              {
+                "stockCode": "688017",
+                "stockName": "绿的谐波",
+                "weight": 2.99
+              }
+            ]
+          }
         },
         {
           "code": "021895",
@@ -706,7 +754,19 @@
               "holdingCount": 15
             }
           },
-          "recommendation": "可小额配置"
+          "recommendation": "可小额配置",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 2.98,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": [
+              {
+                "stockCode": "688017",
+                "stockName": "绿的谐波",
+                "weight": 2.98
+              }
+            ]
+          }
         },
         {
           "code": "021896",
@@ -751,7 +811,19 @@
               "holdingCount": 15
             }
           },
-          "recommendation": "可小额配置"
+          "recommendation": "可小额配置",
+          "match": {
+            "method": "name-keyword",
+            "exposurePct": 2.98,
+            "holdingReport": "2026年1季度股票投资明细",
+            "matchedStocks": [
+              {
+                "stockCode": "688017",
+                "stockName": "绿的谐波",
+                "weight": 2.98
+              }
+            ]
+          }
         }
       ],
       "view": "机器人属于行业轮动方向，当前短期强势，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"

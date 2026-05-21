@@ -38,6 +38,7 @@ FUND_FILTERS = {
 }
 
 FUND_PROFILE_CACHE: dict[str, dict[str, Any]] = {}
+FUND_HOLDING_CACHE: dict[str, dict[str, Any]] = {}
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -254,6 +255,57 @@ def latest_holding_concentration(code: str) -> dict[str, Any]:
             "holdingCount": int(len(weights)),
         }
     return {}
+
+
+def latest_fund_holdings(code: str) -> dict[str, Any]:
+    if code in FUND_HOLDING_CACHE:
+        return FUND_HOLDING_CACHE[code]
+    current_year = str(date.today().year)
+    previous_year = str(date.today().year - 1)
+    for year in [current_year, previous_year]:
+        try:
+            holdings = retry(
+                f"fund holdings for exposure {code} {year}",
+                lambda year=year: ak.fund_portfolio_hold_em(symbol=code, date=year),
+                attempts=2,
+            )
+        except Exception:
+            continue
+        if holdings.empty or "股票代码" not in holdings or "占净值比例" not in holdings:
+            continue
+        latest_quarter = str(holdings["季度"].iloc[-1]) if "季度" in holdings else year
+        latest = holdings[holdings["季度"] == latest_quarter] if "季度" in holdings else holdings
+        positions = []
+        for _, row in latest.iterrows():
+            code_text = str(row.get("股票代码", "")).zfill(6)
+            weight = clean_number(row.get("占净值比例"))
+            if code_text and weight > 0:
+                positions.append(
+                    {
+                        "stockCode": code_text,
+                        "stockName": str(row.get("股票名称", "")),
+                        "weight": weight,
+                    }
+                )
+        result = {"report": latest_quarter, "positions": positions}
+        FUND_HOLDING_CACHE[code] = result
+        return result
+    result = {"report": None, "positions": []}
+    FUND_HOLDING_CACHE[code] = result
+    return result
+
+
+def holding_exposure_to_industry(fund_code: str, industry_codes: set[str]) -> dict[str, Any]:
+    holding = latest_fund_holdings(fund_code)
+    positions = holding.get("positions", [])
+    matched = [position for position in positions if position["stockCode"] in industry_codes]
+    exposure = round(sum(position["weight"] for position in matched), 2)
+    return {
+        "exposurePct": exposure,
+        "matchedStocks": matched[:5],
+        "holdingReport": holding.get("report"),
+        "method": "holding-through",
+    }
 
 
 def fund_quality_profile(code: str) -> dict[str, Any]:
@@ -507,7 +559,31 @@ def fund_recommendation(metrics: dict[str, Any]) -> str:
     return "暂不推荐"
 
 
-def candidate_funds(fund_rank: pd.DataFrame, keywords: list[str], limit: int = 4) -> list[dict[str, Any]]:
+def row_to_fund(row: pd.Series, match_info: dict[str, Any]) -> dict[str, Any]:
+    code_col = "基金代码"
+    name_col = "基金简称"
+    code = str(row.get(code_col, ""))
+    metrics = safe_fund_quant_metrics(code)
+    return {
+        "code": code,
+        "name": str(row.get(name_col, "")),
+        "return1m": clean_number(row.get("近1月")),
+        "return3m": clean_number(row.get("近3月")),
+        "return1y": clean_number(row.get("近1年")),
+        "fee": str(row.get("手续费", "")),
+        "match": match_info,
+        "prediction": metrics,
+        "recommendation": fund_recommendation(metrics),
+    }
+
+
+def candidate_funds(
+    fund_rank: pd.DataFrame,
+    keywords: list[str],
+    industry_codes: set[str] | None = None,
+    limit: int = 4,
+    exposure_scan_limit: int = 80,
+) -> list[dict[str, Any]]:
     if fund_rank.empty:
         return []
     name_col = "基金简称"
@@ -516,8 +592,35 @@ def candidate_funds(fund_rank: pd.DataFrame, keywords: list[str], limit: int = 4
     for keyword in keywords:
         frames.append(fund_rank[fund_rank[name_col].astype(str).str.contains(keyword, case=False, na=False)])
     matched = pd.concat(frames).drop_duplicates(subset=[code_col]) if frames else pd.DataFrame()
-    if matched.empty:
+    frames_for_candidates = []
+    if not matched.empty:
+        frames_for_candidates.append(matched.assign(_match_method="name-keyword", _exposure=0.0))
+
+    if industry_codes:
+        broad = fund_rank.copy()
+        for column in ["近1月", "近3月", "近1年", "手续费"]:
+            if column not in broad.columns:
+                broad[column] = None
+        broad["近3月数值"] = pd.to_numeric(broad["近3月"], errors="coerce").fillna(-999)
+        broad = broad.sort_values("近3月数值", ascending=False).head(exposure_scan_limit)
+        exposure_rows = []
+        for _, row in broad.iterrows():
+            code = str(row.get(code_col, ""))
+            exposure = holding_exposure_to_industry(code, industry_codes)
+            if exposure["exposurePct"] >= 8:
+                enriched = row.copy()
+                enriched["_match_method"] = "holding-through"
+                enriched["_exposure"] = exposure["exposurePct"]
+                enriched["_holding_report"] = exposure.get("holdingReport")
+                enriched["_matched_stocks"] = exposure.get("matchedStocks", [])
+                exposure_rows.append(enriched)
+        if exposure_rows:
+            frames_for_candidates.append(pd.DataFrame(exposure_rows))
+
+    if not frames_for_candidates:
         return []
+
+    matched = pd.concat(frames_for_candidates).drop_duplicates(subset=[code_col], keep="last")
 
     for column in ["近1月", "近3月", "近1年", "手续费"]:
         if column not in matched.columns:
@@ -528,23 +631,17 @@ def candidate_funds(fund_rank: pd.DataFrame, keywords: list[str], limit: int = 4
     matched = matched.sort_values("近3月数值", ascending=False).head(limit * 2)
     funds = []
     for _, row in matched.iterrows():
-        code = str(row.get(code_col, ""))
-        metrics = safe_fund_quant_metrics(code)
-        funds.append(
-            {
-                "code": code,
-                "name": str(row.get(name_col, "")),
-                "return1m": clean_number(row.get("近1月")),
-                "return3m": clean_number(row.get("近3月")),
-                "return1y": clean_number(row.get("近1年")),
-                "fee": str(row.get("手续费", "")),
-                "prediction": metrics,
-                "recommendation": fund_recommendation(metrics),
-            }
-        )
+        method = str(row.get("_match_method", "name-keyword"))
+        match_info = {
+            "method": method,
+            "exposurePct": clean_number(row.get("_exposure")),
+            "holdingReport": row.get("_holding_report") if "_holding_report" in row else None,
+            "matchedStocks": row.get("_matched_stocks") if "_matched_stocks" in row else [],
+        }
+        funds.append(row_to_fund(row, match_info))
     return sorted(
         funds,
-        key=lambda fund: fund.get("prediction", {}).get("quantScore", -1),
+        key=lambda fund: fund.get("prediction", {}).get("quantScore", -1) + fund.get("match", {}).get("exposurePct", 0) * 0.3,
         reverse=True,
     )[:limit]
 
@@ -552,6 +649,11 @@ def candidate_funds(fund_rank: pd.DataFrame, keywords: list[str], limit: int = 4
 def enrich_fund_predictions(payload: dict[str, Any]) -> dict[str, Any]:
     for industry in payload.get("industries", []):
         funds = industry.get("candidateFunds", [])
+        key_codes = {
+            str(company.get("ticker", "")).zfill(6)
+            for company in industry.get("keyCompanies", [])
+            if str(company.get("ticker", "")).isdigit()
+        }
         for fund in funds:
             code = str(fund.get("code", ""))
             if not code:
@@ -559,8 +661,17 @@ def enrich_fund_predictions(payload: dict[str, Any]) -> dict[str, Any]:
             metrics = safe_fund_quant_metrics(code)
             fund["prediction"] = metrics
             fund["recommendation"] = fund_recommendation(metrics)
+            if "match" not in fund:
+                exposure = holding_exposure_to_industry(code, key_codes) if key_codes else {}
+                fund["match"] = {
+                    "method": "holding-through" if exposure.get("exposurePct", 0) >= 3 else "name-keyword",
+                    "exposurePct": exposure.get("exposurePct", 0),
+                    "holdingReport": exposure.get("holdingReport"),
+                    "matchedStocks": exposure.get("matchedStocks", []),
+                }
         funds.sort(
-            key=lambda fund: fund.get("prediction", {}).get("quantScore", -1),
+            key=lambda fund: fund.get("prediction", {}).get("quantScore", -1)
+            + fund.get("match", {}).get("exposurePct", 0) * 0.3,
             reverse=True,
         )
     payload["source"] = append_source_note(payload.get("source", SOURCE_NOTE), FUND_REFRESH_NOTE)
@@ -643,7 +754,9 @@ def build_live_data(limit: int) -> dict[str, Any]:
             attempts=2,
         )
 
-        cons = cons.sort_values("成交额", ascending=False).head(5)
+        cons = cons.sort_values("成交额", ascending=False)
+        industry_codes = {str(row["代码"]).zfill(6) for _, row in cons.iterrows()}
+        cons = cons.head(5)
         key_companies = [
             {"name": str(row["名称"]), "ticker": str(row["代码"])}
             for _, row in cons.head(3).iterrows()
@@ -667,7 +780,7 @@ def build_live_data(limit: int) -> dict[str, Any]:
         capital_score = round(min(100, max(0, 45 + turnover * 9 + day_return * 3)), 1)
         valuation_percentile = percentile_rank(boards["总市值"], clean_number(board.get("总市值")))
         risk = drawdown_score(hist)
-        funds = candidate_funds(fund_rank, fund_keywords)
+        funds = candidate_funds(fund_rank, fund_keywords, industry_codes=industry_codes)
         fund_themes = [f"{keyword}相关基金" for keyword in fund_keywords[:3]]
 
         industries.append(
