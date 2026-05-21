@@ -5,6 +5,7 @@ const state = {
   industries: [],
   allocations: {},
   fundSummary: {},
+  backtest: null,
 };
 
 const periodLabels = {
@@ -74,14 +75,26 @@ const getSignal = (score) => {
 
 async function loadData() {
   const data = await fetchDashboardData();
+  const backtest = await fetchBacktestData();
   state.industries = data.industries;
   state.allocations = data.allocations;
   state.fundSummary = data.fundSummary ?? {};
+  state.backtest = backtest;
   state.selectedIndustryId = data.industries[0].id;
   const sourceLabel = data.isSample ? "示例" : "真实";
   document.querySelector("#dataDate").textContent = `数据日期：${data.asOf}（${sourceLabel}）`;
   document.querySelector("#dataSource").textContent = data.source ?? "本地示例数据";
   render();
+}
+
+async function fetchBacktestData() {
+  try {
+    const response = await fetch("./data/short-term-backtest.json", { cache: "no-store" });
+    if (response.ok) return response.json();
+  } catch (error) {
+    console.warn("Backtest data unavailable.", error);
+  }
+  return null;
 }
 
 async function fetchDashboardData() {
@@ -519,6 +532,34 @@ function renderShortTermRecommendations(industries) {
         })
         .join("")
     : '<div class="empty-state">当前没有满足短线纪律的基金</div>';
+  renderBacktestSummary(picks);
+}
+
+function backtestByCode(code) {
+  const results = state.backtest?.results ?? [];
+  return results.find((item) => item.code === code);
+}
+
+function renderBacktestSummary(picks) {
+  const results = picks.map((fund) => backtestByCode(fund.code)).filter(Boolean);
+  document.querySelector("#backtestSummary").innerHTML = results.length
+    ? results
+        .map(
+          (item) => `
+            <article class="backtest-card">
+              <span>${item.code}</span>
+              <strong>${item.name}</strong>
+              <div class="fund-metrics">
+                <span>信号 ${item.signals}</span>
+                <span>10期胜率 ${item.winRate10.toFixed(1)}%</span>
+                <span>10期均收 ${formatPercent(item.avgReturn10)}</span>
+                <span>20期回撤 ${item.avgDrawdown20.toFixed(2)}%</span>
+              </div>
+            </article>
+          `,
+        )
+        .join("")
+    : '<div class="empty-state">暂无匹配的短线回测结果</div>';
 }
 
 function render() {
