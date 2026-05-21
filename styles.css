@@ -374,10 +374,37 @@ li {
   line-height: 1.65;
 }
 
+.daily-panel,
 .fund-panel,
 .fund-workspace,
 .disclaimer {
   margin-top: 18px;
+}
+
+.daily-picks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pick-card {
+  min-height: 150px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcf9;
+}
+
+.pick-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.pick-card p {
+  margin-top: 10px;
+  color: var(--muted);
 }
 
 .fund-workspace {
@@ -456,6 +483,7 @@ li {
   .control-strip,
   .summary-grid,
   .metric-grid,
+  .daily-picks,
   .fund-summary-grid,
   .allocation-grid {
     grid-template-columns: 1fr 1fr;
@@ -470,6 +498,7 @@ li {
   .control-strip,
   .summary-grid,
   .metric-grid,
+  .daily-picks,
   .fund-summary-grid,
   .allocation-grid {
     grid-template-columns: 1fr;

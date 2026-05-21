@@ -21,6 +21,30 @@ const riskLabels = {
   aggressive: "进取型",
 };
 
+const riskRules = {
+  conservative: {
+    maxRisk: 45,
+    minQuality: 85,
+    minQuant: 62,
+    allowFiltered: false,
+    cycle: "6-18 个月",
+  },
+  balanced: {
+    maxRisk: 60,
+    minQuality: 75,
+    minQuant: 58,
+    allowFiltered: false,
+    cycle: "3-12 个月",
+  },
+  aggressive: {
+    maxRisk: 75,
+    minQuality: 65,
+    minQuant: 55,
+    allowFiltered: false,
+    cycle: "1-6 个月",
+  },
+};
+
 const formatPercent = (value) => `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 
 const signalClass = (value) => {
@@ -177,7 +201,7 @@ function renderDetail(industries) {
   document.querySelector("#fundThemeList").innerHTML = selected.fundThemes
     .map((theme) => `<li>${theme}</li>`)
     .join("");
-  const candidateFunds = selected.candidateFunds ?? [];
+  const candidateFunds = rankFundsForRisk(selected.candidateFunds ?? [], state.riskProfile);
   document.querySelector("#candidateFundList").innerHTML = candidateFunds.length
     ? candidateFunds
         .map(
@@ -210,12 +234,58 @@ function renderDetail(industries) {
               </div>
               ${issues.length ? `<p class="fund-warning">过滤原因：${issues.join("；")}</p>` : ""}
               ${missing.length ? `<p class="fund-missing">缺失字段：${missing.join("、")}</p>` : ""}
+              <p class="fund-missing">建议周期：${holdingPeriodForFund(fund, state.riskProfile, selected)}</p>
             </li>`;
           },
         )
         .join("")
     : "<li>暂无匹配基金候选</li>";
   document.querySelector("#detailNote").textContent = selected.view;
+}
+
+function rankFundsForRisk(funds, riskProfile) {
+  const rules = riskRules[riskProfile] ?? riskRules.balanced;
+  return funds
+    .filter((fund) => passesRiskProfile(fund, rules))
+    .map((fund) => ({ ...fund, riskAdjustedScore: fundScoreForRisk(fund, riskProfile) }))
+    .sort((a, b) => b.riskAdjustedScore - a.riskAdjustedScore);
+}
+
+function passesRiskProfile(fund, rules) {
+  const prediction = fund.prediction ?? {};
+  const quality = prediction.quality ?? {};
+  if (!rules.allowFiltered && quality.filterPassed === false) return false;
+  if ((prediction.riskScore ?? 100) > rules.maxRisk) return false;
+  if ((quality.qualityScore ?? 0) < rules.minQuality) return false;
+  if ((prediction.quantScore ?? 0) < rules.minQuant) return false;
+  return true;
+}
+
+function fundScoreForRisk(fund, riskProfile) {
+  const prediction = fund.prediction ?? {};
+  const quality = prediction.quality ?? {};
+  const probability = prediction.upsideProbability ?? 0;
+  const risk = prediction.riskScore ?? 100;
+  const quant = prediction.quantScore ?? 0;
+  const qualityScore = quality.qualityScore ?? 0;
+  if (riskProfile === "conservative") {
+    return quant * 0.36 + qualityScore * 0.34 + (100 - risk) * 0.22 + probability * 0.08;
+  }
+  if (riskProfile === "aggressive") {
+    return quant * 0.44 + probability * 0.30 + qualityScore * 0.16 + (100 - risk) * 0.10;
+  }
+  return quant * 0.42 + qualityScore * 0.25 + probability * 0.20 + (100 - risk) * 0.13;
+}
+
+function holdingPeriodForFund(fund, riskProfile, industry) {
+  const prediction = fund.prediction ?? {};
+  const risk = prediction.riskScore ?? 100;
+  const momentum60 = prediction.momentum60 ?? 0;
+  const drawdown = prediction.maxDrawdown ?? 0;
+  if (riskProfile === "conservative") return risk <= 35 ? "9-18 个月" : "6-12 个月";
+  if (riskProfile === "aggressive") return momentum60 >= 20 && industry.score >= 70 ? "1-3 个月" : "3-6 个月";
+  if (drawdown <= 12 && risk <= 45) return "6-12 个月";
+  return "3-9 个月";
 }
 
 function formatNullable(value, suffix) {
@@ -244,7 +314,7 @@ function renderAllocations() {
 }
 
 function renderFundSummary() {
-  const summary = state.fundSummary ?? {};
+  const summary = summarizeFundsForRisk(state.riskProfile);
   const total = summary.total ?? 0;
   const passed = summary.passed ?? 0;
   const filtered = summary.filtered ?? 0;
@@ -262,6 +332,79 @@ function renderFundSummary() {
     : "<li>暂无主要过滤问题</li>";
 }
 
+function summarizeFundsForRisk(riskProfile) {
+  const allFunds = state.industries.flatMap((industry) => industry.candidateFunds ?? []);
+  const rules = riskRules[riskProfile] ?? riskRules.balanced;
+  const passedFunds = allFunds.filter((fund) => passesRiskProfile(fund, rules));
+  const issues = {};
+  let filtered = 0;
+  let insufficient = 0;
+
+  for (const fund of allFunds) {
+    const prediction = fund.prediction ?? {};
+    const quality = prediction.quality ?? {};
+    if (!Object.keys(prediction).length) {
+      insufficient += 1;
+      continue;
+    }
+    if (!passesRiskProfile(fund, rules)) {
+      filtered += 1;
+      const labels = [];
+      if (quality.filterPassed === false) labels.push(...(quality.filterIssues ?? []).map((issue) => issue.split("：")[0]));
+      if ((prediction.riskScore ?? 100) > rules.maxRisk) labels.push("风险分超限");
+      if ((quality.qualityScore ?? 0) < rules.minQuality) labels.push("质量分不足");
+      if ((prediction.quantScore ?? 0) < rules.minQuant) labels.push("综合分不足");
+      for (const label of labels.length ? labels : ["不符合风险偏好"]) {
+        issues[label] = (issues[label] ?? 0) + 1;
+      }
+    }
+  }
+
+  return {
+    total: allFunds.length,
+    passed: passedFunds.length,
+    filtered,
+    insufficient,
+    topIssues: Object.entries(issues)
+      .map(([issue, count]) => ({ issue, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5),
+  };
+}
+
+function renderDailyRecommendations(industries) {
+  const candidates = industries.flatMap((industry) =>
+    rankFundsForRisk(industry.candidateFunds ?? [], state.riskProfile).map((fund) => ({
+      ...fund,
+      industryName: industry.name,
+      industryScore: industry.score,
+      holdingPeriod: holdingPeriodForFund(fund, state.riskProfile, industry),
+      finalScore: fundScoreForRisk(fund, state.riskProfile) + industry.score * 0.18,
+    })),
+  );
+  const picks = candidates.sort((a, b) => b.finalScore - a.finalScore).slice(0, 3);
+  document.querySelector("#dailyFundPicks").innerHTML = picks.length
+    ? picks
+        .map((fund) => {
+          const prediction = fund.prediction ?? {};
+          const quality = prediction.quality ?? {};
+          return `
+            <article class="pick-card">
+              <span>${fund.industryName}</span>
+              <strong>${fund.name}</strong>
+              <div class="fund-metrics">
+                <span>上涨概率 ${(prediction.upsideProbability ?? 0).toFixed(1)}%</span>
+                <span>风险 ${(prediction.riskScore ?? 0).toFixed(1)}</span>
+                <span>质量 ${(quality.qualityScore ?? 0).toFixed(1)}</span>
+              </div>
+              <p>建议周期：${fund.holdingPeriod}</p>
+            </article>
+          `;
+        })
+        .join("")
+    : '<div class="empty-state">当前风险偏好下暂无满足条件的推荐基金</div>';
+}
+
 function render() {
   const industries = getVisibleIndustries();
   renderSummary(industries);
@@ -269,6 +412,7 @@ function render() {
   renderDetail(industries);
   renderAllocations();
   renderFundSummary();
+  renderDailyRecommendations(industries);
 }
 
 document.querySelector("#periodTabs").addEventListener("click", (event) => {
@@ -292,7 +436,7 @@ document.querySelector("#searchInput").addEventListener("input", render);
 
 document.querySelector("#riskSelect").addEventListener("change", (event) => {
   state.riskProfile = event.target.value;
-  renderAllocations();
+  render();
 });
 
 loadData();
