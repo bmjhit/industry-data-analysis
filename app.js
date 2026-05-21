@@ -4,6 +4,7 @@ const state = {
   riskProfile: "balanced",
   industries: [],
   allocations: {},
+  fundSummary: {},
 };
 
 const periodLabels = {
@@ -51,6 +52,7 @@ async function loadData() {
   const data = await fetchDashboardData();
   state.industries = data.industries;
   state.allocations = data.allocations;
+  state.fundSummary = data.fundSummary ?? {};
   state.selectedIndustryId = data.industries[0].id;
   const sourceLabel = data.isSample ? "示例" : "真实";
   document.querySelector("#dataDate").textContent = `数据日期：${data.asOf}（${sourceLabel}）`;
@@ -204,6 +206,7 @@ function renderDetail(industries) {
                 <span>经理 ${formatManagers(quality.managerNames)}</span>
                 <span>前十大 ${formatNullable(quality.top10HoldingPct, "%")}</span>
                 <span>跟踪误差 ${formatNullable(quality.trackingError, "%")}</span>
+                <span>基准 ${quality.trackingBenchmark ?? "--"}</span>
               </div>
               ${issues.length ? `<p class="fund-warning">过滤原因：${issues.join("；")}</p>` : ""}
               ${missing.length ? `<p class="fund-missing">缺失字段：${missing.join("、")}</p>` : ""}
@@ -240,12 +243,32 @@ function renderAllocations() {
     .join("");
 }
 
+function renderFundSummary() {
+  const summary = state.fundSummary ?? {};
+  const total = summary.total ?? 0;
+  const passed = summary.passed ?? 0;
+  const filtered = summary.filtered ?? 0;
+  const insufficient = summary.insufficient ?? 0;
+  document.querySelector("#fundSummary").innerHTML = `
+    <article><span>候选基金</span><strong>${total}</strong></article>
+    <article><span>通过过滤</span><strong>${passed}</strong></article>
+    <article><span>过滤淘汰</span><strong>${filtered}</strong></article>
+    <article><span>数据不足</span><strong>${insufficient}</strong></article>
+  `;
+  document.querySelector("#fundIssueList").innerHTML = (summary.topIssues ?? []).length
+    ? summary.topIssues
+        .map((item) => `<li>${item.issue} <span class="muted">${item.count} 只</span></li>`)
+        .join("")
+    : "<li>暂无主要过滤问题</li>";
+}
+
 function render() {
   const industries = getVisibleIndustries();
   renderSummary(industries);
   renderIndustryList(industries);
   renderDetail(industries);
   renderAllocations();
+  renderFundSummary();
 }
 
 document.querySelector("#periodTabs").addEventListener("click", (event) => {

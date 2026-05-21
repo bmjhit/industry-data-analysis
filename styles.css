@@ -375,8 +375,37 @@ li {
 }
 
 .fund-panel,
+.fund-workspace,
 .disclaimer {
   margin-top: 18px;
+}
+
+.fund-workspace {
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+}
+
+.fund-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fund-summary-grid article {
+  min-height: 86px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcf9;
+}
+
+.fund-summary-grid strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 24px;
+}
+
+.fund-summary-grid span {
+  color: var(--muted);
 }
 
 .allocation-grid {
@@ -427,6 +456,7 @@ li {
   .control-strip,
   .summary-grid,
   .metric-grid,
+  .fund-summary-grid,
   .allocation-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -440,6 +470,7 @@ li {
   .control-strip,
   .summary-grid,
   .metric-grid,
+  .fund-summary-grid,
   .allocation-grid {
     grid-template-columns: 1fr;
   }

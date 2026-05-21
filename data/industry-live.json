@@ -264,6 +264,8 @@
               "managerFundSizeYi": 99.7,
               "managerTrackingAbility": null,
               "trackingError": 17.48,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 31.82,
               "largestHoldingPct": 4.26,
               "holdingReport": "2026年1季度股票投资明细",
@@ -307,6 +309,8 @@
               "managerFundSizeYi": 26.07,
               "managerTrackingAbility": null,
               "trackingError": 20.97,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 47.89,
               "largestHoldingPct": 8.58,
               "holdingReport": "2026年1季度股票投资明细",
@@ -353,6 +357,8 @@
               "managerFundSizeYi": 16.29,
               "managerTrackingAbility": null,
               "trackingError": 20.65,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 53.87,
               "largestHoldingPct": 7.98,
               "holdingReport": "2026年1季度股票投资明细",
@@ -398,6 +404,8 @@
               "managerFundSizeYi": 99.7,
               "managerTrackingAbility": null,
               "trackingError": 17.47,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 31.82,
               "largestHoldingPct": 4.26,
               "holdingReport": "2026年1季度股票投资明细",
@@ -596,6 +604,8 @@
               "managerFundSizeYi": 15.64,
               "managerTrackingAbility": 75.1,
               "trackingError": 18.85,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 50.96,
               "largestHoldingPct": 9.4,
               "holdingReport": "2026年1季度股票投资明细",
@@ -639,6 +649,8 @@
               "managerFundSizeYi": 103.5,
               "managerTrackingAbility": 79.1,
               "trackingError": 19.0,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 51.62,
               "largestHoldingPct": 9.45,
               "holdingReport": "2026年1季度股票投资明细",
@@ -682,6 +694,8 @@
               "managerFundSizeYi": 163.12,
               "managerTrackingAbility": 88.2,
               "trackingError": 19.01,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 52.15,
               "largestHoldingPct": 9.47,
               "holdingReport": "2026年1季度股票投资明细",
@@ -725,6 +739,8 @@
               "managerFundSizeYi": 163.12,
               "managerTrackingAbility": 88.2,
               "trackingError": 19.01,
+              "trackingBenchmark": "沪深300",
+              "trackingConfidence": "broad-index",
               "top10HoldingPct": 52.15,
               "largestHoldingPct": 9.47,
               "holdingReport": "2026年1季度股票投资明细",
@@ -884,6 +900,22 @@
         "name": "货币基金",
         "weight": "10%",
         "rationale": "保留应对深度回撤的再投入能力。"
+      }
+    ]
+  },
+  "fundSummary": {
+    "total": 8,
+    "passed": 5,
+    "filtered": 3,
+    "insufficient": 0,
+    "topIssues": [
+      {
+        "issue": "跟踪误差偏高",
+        "count": 2
+      },
+      {
+        "issue": "规模过小",
+        "count": 1
       }
     ]
   }

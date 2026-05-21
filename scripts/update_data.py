@@ -182,25 +182,50 @@ def js_date_to_iso(timestamp_ms: Any) -> str | None:
         return None
 
 
-def annual_tracking_error(series_list: list[dict[str, Any]]) -> float | None:
+def annual_tracking_error(series_list: list[dict[str, Any]]) -> tuple[float | None, str | None]:
     if len(series_list) < 2:
-        return None
+        return None, None
     fund_data = series_list[0].get("data", [])
-    benchmark_data = series_list[-1].get("data", [])
+    benchmark = choose_tracking_benchmark(series_list)
+    if benchmark is None:
+        return None, None
+    benchmark_name, benchmark_data = benchmark
     if len(fund_data) < 20 or len(benchmark_data) < 20:
-        return None
+        return None, benchmark_name
     fund = pd.DataFrame(fund_data, columns=["date", "return"])
     benchmark = pd.DataFrame(benchmark_data, columns=["date", "return"])
     merged = fund.merge(benchmark, on="date", suffixes=("_fund", "_benchmark"))
     if len(merged) < 20:
-        return None
+        return None, benchmark_name
     fund_level = 1 + pd.to_numeric(merged["return_fund"], errors="coerce") / 100
     benchmark_level = 1 + pd.to_numeric(merged["return_benchmark"], errors="coerce") / 100
     active_return = fund_level.pct_change() - benchmark_level.pct_change()
     active_return = active_return.dropna().tail(120)
     if active_return.empty:
+        return None, benchmark_name
+    return round(float(active_return.std() * math.sqrt(252) * 100), 2), benchmark_name
+
+
+def choose_tracking_benchmark(series_list: list[dict[str, Any]]) -> tuple[str, list[Any]] | None:
+    candidates = []
+    for item in series_list[1:]:
+        name = str(item.get("name", ""))
+        data = item.get("data", [])
+        if not data:
+            continue
+        score = min(20, len(data) / 10)
+        if "同类" in name:
+            score -= 50
+        if "沪深300" in name:
+            score -= 10
+        if any(keyword in name for keyword in ["中证", "国证", "创业板", "科创", "红利", "恒生"]):
+            score += 40
+        candidates.append((score, name, data))
+    if not candidates:
         return None
-    return round(float(active_return.std() * math.sqrt(252) * 100), 2)
+    candidates.sort(key=lambda row: row[0], reverse=True)
+    _, name, data = candidates[0]
+    return name, data
 
 
 def latest_holding_concentration(code: str) -> dict[str, Any]:
@@ -253,6 +278,8 @@ def fund_quality_profile(code: str) -> dict[str, Any]:
         "managerFundSizeYi": None,
         "managerTrackingAbility": None,
         "trackingError": None,
+        "trackingBenchmark": None,
+        "trackingConfidence": "unknown",
         "top10HoldingPct": None,
         "largestHoldingPct": None,
         "holdingReport": None,
@@ -310,7 +337,10 @@ def fund_quality_profile(code: str) -> dict[str, Any]:
         pass
 
     try:
-        profile["trackingError"] = annual_tracking_error(ctx.execute("Data_grandTotal"))
+        tracking_error, benchmark_name = annual_tracking_error(ctx.execute("Data_grandTotal"))
+        profile["trackingError"] = tracking_error
+        profile["trackingBenchmark"] = benchmark_name
+        profile["trackingConfidence"] = "fund-benchmark" if benchmark_name and "沪深300" not in benchmark_name else "broad-index"
     except Exception:
         pass
 
@@ -534,7 +564,41 @@ def enrich_fund_predictions(payload: dict[str, Any]) -> dict[str, Any]:
             reverse=True,
         )
     payload["source"] = append_source_note(payload.get("source", SOURCE_NOTE), FUND_REFRESH_NOTE)
+    payload["fundSummary"] = summarize_funds(payload.get("industries", []))
     return payload
+
+
+def summarize_funds(industries: list[dict[str, Any]]) -> dict[str, Any]:
+    funds = [fund for industry in industries for fund in industry.get("candidateFunds", [])]
+    total = len(funds)
+    passed = 0
+    filtered = 0
+    insufficient = 0
+    issues: dict[str, int] = {}
+    for fund in funds:
+        prediction = fund.get("prediction", {})
+        quality = prediction.get("quality", {})
+        if not prediction:
+            insufficient += 1
+            continue
+        if quality.get("filterPassed", True):
+            passed += 1
+        else:
+            filtered += 1
+        for issue in quality.get("filterIssues", []):
+            label = str(issue).split("：", 1)[0]
+            issues[label] = issues.get(label, 0) + 1
+    return {
+        "total": total,
+        "passed": passed,
+        "filtered": filtered,
+        "insufficient": insufficient,
+        "topIssues": sorted(
+            [{"issue": key, "count": value} for key, value in issues.items()],
+            key=lambda row: row["count"],
+            reverse=True,
+        )[:5],
+    }
 
 
 def append_source_note(source: str, note: str) -> str:
@@ -636,6 +700,7 @@ def build_live_data(limit: int) -> dict[str, Any]:
         "source": SOURCE_NOTE,
         "isSample": False,
         "industries": industries,
+        "fundSummary": summarize_funds(industries),
         "allocations": allocations(),
     }
 

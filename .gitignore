@@ -6,3 +6,4 @@ build/
 .env.*
 *.log
 dashboard-live-preview.png
+current-dashboard-ui.png
