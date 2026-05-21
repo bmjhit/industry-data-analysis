@@ -1,6 +1,6 @@
 {
   "asOf": "2026-05-21",
-  "source": "AkShare 1.18.63；底层为东方财富公开行情与基金排行页面",
+  "source": "AkShare 1.18.63；底层为东方财富公开行情与基金排行页面；个基量化预测已刷新；行业数据沿用上次成功缓存",
   "isSample": false,
   "industries": [
     {
@@ -234,20 +234,27 @@
       ],
       "candidateFunds": [
         {
-          "code": "001188",
-          "name": "鹏华改革红利股票",
-          "return1m": 31.13,
-          "return3m": 35.73,
-          "return1y": 81.45,
-          "fee": "0.15%"
-        },
-        {
           "code": "660015",
           "name": "农银行业轮动混合A",
           "return1m": 20.03,
           "return3m": 31.08,
           "return1y": 91.93,
-          "fee": "0.15%"
+          "fee": "0.15%",
+          "prediction": {
+            "upsideProbability": 95,
+            "riskScore": 39.2,
+            "quantScore": 81.3,
+            "momentum20": 20.76,
+            "momentum60": 30.89,
+            "momentum120": 45.58,
+            "volatility": 27.13,
+            "maxDrawdown": 11.98,
+            "winRate": 58.3,
+            "sharpeLike": 3.05,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "优先观察"
         },
         {
           "code": "015850",
@@ -255,7 +262,45 @@
           "return1m": 19.99,
           "return3m": 30.94,
           "return1y": 91.17,
-          "fee": "0.00%"
+          "fee": "0.00%",
+          "prediction": {
+            "upsideProbability": 95,
+            "riskScore": 39.3,
+            "quantScore": 81.3,
+            "momentum20": 20.72,
+            "momentum60": 30.75,
+            "momentum120": 45.29,
+            "volatility": 27.13,
+            "maxDrawdown": 12.05,
+            "winRate": 58.3,
+            "sharpeLike": 3.03,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "优先观察"
+        },
+        {
+          "code": "001188",
+          "name": "鹏华改革红利股票",
+          "return1m": 31.13,
+          "return3m": 35.73,
+          "return1y": 81.45,
+          "fee": "0.15%",
+          "prediction": {
+            "upsideProbability": 95,
+            "riskScore": 47.4,
+            "quantScore": 79.8,
+            "momentum20": 31.34,
+            "momentum60": 36.12,
+            "momentum120": 54.55,
+            "volatility": 29.15,
+            "maxDrawdown": 16.72,
+            "winRate": 61.7,
+            "sharpeLike": 3.29,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "可小额配置"
         },
         {
           "code": "001951",
@@ -263,7 +308,22 @@
           "return1m": 13.74,
           "return3m": 27.4,
           "return1y": 66.39,
-          "fee": "0.15%"
+          "fee": "0.15%",
+          "prediction": {
+            "upsideProbability": 95,
+            "riskScore": 46.7,
+            "quantScore": 78.4,
+            "momentum20": 14.04,
+            "momentum60": 28.43,
+            "momentum120": 42.27,
+            "volatility": 30.47,
+            "maxDrawdown": 15.38,
+            "winRate": 60.0,
+            "sharpeLike": 2.58,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "可小额配置"
         }
       ],
       "view": "国有大型银行Ⅲ属于金融价值方向，当前仍需观察，市值分位偏高，回撤风险相对可控。基金配置建议以分批、限额和再平衡为主。"
@@ -419,12 +479,27 @@
       ],
       "candidateFunds": [
         {
-          "code": "021895",
-          "name": "国投瑞银中证机器人指数发起式A",
-          "return1m": 16.47,
-          "return3m": 10.35,
-          "return1y": 35.13,
-          "fee": "0.06%"
+          "code": "021301",
+          "name": "银河中证机器人指数发起式A",
+          "return1m": 16.24,
+          "return3m": 10.27,
+          "return1y": 37.54,
+          "fee": "0.10%",
+          "prediction": {
+            "upsideProbability": 73.3,
+            "riskScore": 46.1,
+            "quantScore": 65.4,
+            "momentum20": 17.16,
+            "momentum60": 11.77,
+            "momentum120": 23.86,
+            "volatility": 25.28,
+            "maxDrawdown": 18.2,
+            "winRate": 51.7,
+            "sharpeLike": 1.9,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "可小额配置"
         },
         {
           "code": "018094",
@@ -432,7 +507,45 @@
           "return1m": 16.5,
           "return3m": 10.31,
           "return1y": 36.84,
-          "fee": "0.10%"
+          "fee": "0.10%",
+          "prediction": {
+            "upsideProbability": 72.6,
+            "riskScore": 46.9,
+            "quantScore": 64.7,
+            "momentum20": 17.43,
+            "momentum60": 11.73,
+            "momentum120": 23.22,
+            "volatility": 25.51,
+            "maxDrawdown": 18.71,
+            "winRate": 51.7,
+            "sharpeLike": 1.85,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "可小额配置"
+        },
+        {
+          "code": "021895",
+          "name": "国投瑞银中证机器人指数发起式A",
+          "return1m": 16.47,
+          "return3m": 10.35,
+          "return1y": 35.13,
+          "fee": "0.06%",
+          "prediction": {
+            "upsideProbability": 72.2,
+            "riskScore": 46.8,
+            "quantScore": 64.5,
+            "momentum20": 17.42,
+            "momentum60": 11.79,
+            "momentum120": 22.46,
+            "volatility": 25.5,
+            "maxDrawdown": 18.59,
+            "winRate": 51.7,
+            "sharpeLike": 1.8,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "可小额配置"
         },
         {
           "code": "021896",
@@ -440,15 +553,22 @@
           "return1m": 16.46,
           "return3m": 10.31,
           "return1y": 34.92,
-          "fee": "0.00%"
-        },
-        {
-          "code": "021301",
-          "name": "银河中证机器人指数发起式A",
-          "return1m": 16.24,
-          "return3m": 10.27,
-          "return1y": 37.54,
-          "fee": "0.10%"
+          "fee": "0.00%",
+          "prediction": {
+            "upsideProbability": 72.1,
+            "riskScore": 46.8,
+            "quantScore": 64.4,
+            "momentum20": 17.4,
+            "momentum60": 11.75,
+            "momentum120": 22.38,
+            "volatility": 25.5,
+            "maxDrawdown": 18.61,
+            "winRate": 51.7,
+            "sharpeLike": 1.79,
+            "sampleDays": 180,
+            "model": "momentum-risk-v1"
+          },
+          "recommendation": "可小额配置"
         }
       ],
       "view": "机器人属于行业轮动方向，当前短期强势，市值分位适中或偏低，回撤风险较高。基金配置建议以分批、限额和再平衡为主。"

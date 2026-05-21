@@ -179,8 +179,22 @@ function renderDetail(industries) {
   document.querySelector("#candidateFundList").innerHTML = candidateFunds.length
     ? candidateFunds
         .map(
-          (fund) =>
-            `<li>${fund.name} <span class="muted">(${fund.code}，近3月 ${formatPercent(fund.return3m)})</span></li>`,
+          (fund) => {
+            const prediction = fund.prediction ?? {};
+            const probability = prediction.upsideProbability ?? 0;
+            const risk = prediction.riskScore ?? 0;
+            const score = prediction.quantScore ?? 0;
+            return `<li>
+              <strong>${fund.name}</strong>
+              <span class="muted">(${fund.code})</span>
+              <div class="fund-metrics">
+                <span>上涨概率 ${probability.toFixed(1)}%</span>
+                <span>风险 ${risk.toFixed(1)}/100</span>
+                <span>综合 ${score.toFixed(1)}</span>
+                <span>${fund.recommendation ?? "观察"}</span>
+              </div>
+            </li>`;
+          },
         )
         .join("")
     : "<li>暂无匹配基金候选</li>";

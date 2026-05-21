@@ -76,6 +76,10 @@ def clean_number(value: Any, default: float = 0.0) -> float:
     return number
 
 
+def clamp(value: float, lower: float = 0.0, upper: float = 100.0) -> float:
+    return max(lower, min(upper, value))
+
+
 def percentile_rank(series: pd.Series, value: float) -> float:
     numeric = pd.to_numeric(series, errors="coerce").dropna()
     if numeric.empty:
@@ -117,6 +121,101 @@ def drawdown_score(hist: pd.DataFrame) -> float:
     return round(min(100, abs(float(max_drawdown)) * 4), 1)
 
 
+def series_return(close: pd.Series, sessions: int) -> float:
+    close = pd.to_numeric(close, errors="coerce").dropna()
+    if close.empty:
+        return 0.0
+    current = float(close.iloc[-1])
+    previous = float(close.iloc[0]) if len(close) <= sessions else float(close.iloc[-sessions - 1])
+    if previous == 0:
+        return 0.0
+    return (current / previous - 1) * 100
+
+
+def max_drawdown_percent(close: pd.Series, sessions: int = 180) -> float:
+    close = pd.to_numeric(close, errors="coerce").dropna().tail(sessions)
+    if len(close) < 2:
+        return 0.0
+    running_high = close.cummax()
+    return abs(float(((close / running_high) - 1).min() * 100))
+
+
+def fund_quant_metrics(code: str) -> dict[str, Any]:
+    nav = retry(
+        f"fund nav {code}",
+        lambda: ak.fund_open_fund_info_em(symbol=code, indicator="单位净值走势"),
+        attempts=2,
+    )
+    if nav.empty or "单位净值" not in nav:
+        return {}
+
+    close = pd.to_numeric(nav["单位净值"], errors="coerce").dropna()
+    returns = close.pct_change().dropna().tail(180)
+    if len(close) < 30 or returns.empty:
+        return {}
+
+    momentum_20 = series_return(close, 20)
+    momentum_60 = series_return(close, 60)
+    momentum_120 = series_return(close, 120)
+    volatility = float(returns.tail(120).std() * math.sqrt(252) * 100)
+    drawdown = max_drawdown_percent(close)
+    win_rate = float((returns.tail(60) > 0).mean() * 100)
+    mean_return = float(returns.tail(120).mean() * 252 * 100)
+    sharpe_like = mean_return / volatility if volatility > 0 else 0.0
+    consistency = clamp(50 + (win_rate - 50) * 1.4 + min(momentum_20, momentum_60) * 0.8)
+
+    upside_probability = clamp(
+        50
+        + momentum_60 * 0.75
+        + momentum_20 * 0.35
+        + momentum_120 * 0.18
+        + sharpe_like * 7.5
+        + (win_rate - 50) * 0.32
+        - volatility * 0.22
+        - drawdown * 0.28,
+        5,
+        95,
+    )
+    risk_score = clamp(volatility * 0.85 + drawdown * 1.35 + max(0, -momentum_60) * 0.9)
+    quant_score = clamp(upside_probability * 0.55 + (100 - risk_score) * 0.35 + consistency * 0.10)
+
+    return {
+        "upsideProbability": round(upside_probability, 1),
+        "riskScore": round(risk_score, 1),
+        "quantScore": round(quant_score, 1),
+        "momentum20": round(momentum_20, 2),
+        "momentum60": round(momentum_60, 2),
+        "momentum120": round(momentum_120, 2),
+        "volatility": round(volatility, 2),
+        "maxDrawdown": round(drawdown, 2),
+        "winRate": round(win_rate, 1),
+        "sharpeLike": round(sharpe_like, 2),
+        "sampleDays": int(len(returns)),
+        "model": "momentum-risk-v1",
+    }
+
+
+def safe_fund_quant_metrics(code: str) -> dict[str, Any]:
+    try:
+        return fund_quant_metrics(code)
+    except Exception:
+        return {}
+
+
+def fund_recommendation(metrics: dict[str, Any]) -> str:
+    if not metrics:
+        return "数据不足"
+    probability = metrics["upsideProbability"]
+    risk = metrics["riskScore"]
+    if probability >= 65 and risk <= 45:
+        return "优先观察"
+    if probability >= 58 and risk <= 60:
+        return "可小额配置"
+    if probability >= 52:
+        return "等待回撤"
+    return "暂不推荐"
+
+
 def candidate_funds(fund_rank: pd.DataFrame, keywords: list[str], limit: int = 4) -> list[dict[str, Any]]:
     if fund_rank.empty:
         return []
@@ -135,20 +234,46 @@ def candidate_funds(fund_rank: pd.DataFrame, keywords: list[str], limit: int = 4
 
     matched = matched.copy()
     matched["近3月数值"] = pd.to_numeric(matched["近3月"], errors="coerce").fillna(-999)
-    matched = matched.sort_values("近3月数值", ascending=False).head(limit)
+    matched = matched.sort_values("近3月数值", ascending=False).head(limit * 2)
     funds = []
     for _, row in matched.iterrows():
+        code = str(row.get(code_col, ""))
+        metrics = safe_fund_quant_metrics(code)
         funds.append(
             {
-                "code": str(row.get(code_col, "")),
+                "code": code,
                 "name": str(row.get(name_col, "")),
                 "return1m": clean_number(row.get("近1月")),
                 "return3m": clean_number(row.get("近3月")),
                 "return1y": clean_number(row.get("近1年")),
                 "fee": str(row.get("手续费", "")),
+                "prediction": metrics,
+                "recommendation": fund_recommendation(metrics),
             }
         )
-    return funds
+    return sorted(
+        funds,
+        key=lambda fund: fund.get("prediction", {}).get("quantScore", -1),
+        reverse=True,
+    )[:limit]
+
+
+def enrich_fund_predictions(payload: dict[str, Any]) -> dict[str, Any]:
+    for industry in payload.get("industries", []):
+        funds = industry.get("candidateFunds", [])
+        for fund in funds:
+            code = str(fund.get("code", ""))
+            if not code:
+                continue
+            metrics = safe_fund_quant_metrics(code)
+            fund["prediction"] = metrics
+            fund["recommendation"] = fund_recommendation(metrics)
+        funds.sort(
+            key=lambda fund: fund.get("prediction", {}).get("quantScore", -1),
+            reverse=True,
+        )
+    payload["source"] = f"{payload.get('source', SOURCE_NOTE)}；个基量化预测已刷新"
+    return payload
 
 
 def build_live_data(limit: int) -> dict[str, Any]:
@@ -288,7 +413,15 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=20, help="number of top industries to fetch")
     args = parser.parse_args()
 
-    payload = build_live_data(limit=args.limit)
+    try:
+        payload = build_live_data(limit=args.limit)
+    except Exception:
+        if not OUTPUT.exists():
+            raise
+        with OUTPUT.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        payload = enrich_fund_predictions(payload)
+        payload["source"] = f"{payload['source']}；行业数据沿用上次成功缓存"
     write_json_atomic(OUTPUT, payload)
     print(f"wrote {OUTPUT} with {len(payload['industries'])} industries")
     print(f"source: {payload['source']}")
@@ -296,4 +429,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
