@@ -15,17 +15,19 @@
 
 ```bash
 python3 -m pip install -r requirements.txt
-python3 scripts/update_data.py --limit 20 --funds-per-industry 12 --fund-scan-limit 120 --exposure-threshold 2.5
+python3 scripts/update_data.py --limit 12 --funds-per-industry 12 --fund-scan-limit 120 --exposure-threshold 2.5
 python3 scripts/backtest_short_term.py
 ```
 
-启动本地静态服务：
+启动本地看板服务：
 
 ```bash
-python3 -m http.server 4173
+python3 scripts/serve_dashboard.py 4174
 ```
 
-然后打开 `http://localhost:4173/`。页面会优先读取 `data/industry-live.json`，如果该文件不存在或读取失败，会回落到 `data/industry-sample.json` 示例数据。
+然后打开 `http://localhost:4174/`。页面会优先读取 `data/industry-live.json`，如果该文件不存在或读取失败，会回落到 `data/industry-sample.json` 示例数据。
+
+页面中的“每行业候选”可以调整候选基金数量，点击“刷新数据”会调用本地 `/api/refresh`，重新执行真实数据更新和短线回测。若仅用 `python3 -m http.server` 启动，页面仍可浏览，但无法从 UI 触发数据刷新。
 
 ## 后续数据接入方向
 

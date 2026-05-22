@@ -9,6 +9,15 @@ const state = {
   backtest: null,
 };
 
+const refreshConfigKey = "industryDashboardRefreshConfig";
+const refreshDefaults = {
+  limit: 12,
+  fundsPerIndustry: 12,
+  fundScanLimit: 120,
+  exposureThreshold: 2.5,
+  runBacktest: true,
+};
+
 const periodLabels = {
   day: "日",
   week: "周",
@@ -86,6 +95,7 @@ async function loadData() {
   const sourceLabel = data.isSample ? "示例" : "真实";
   document.querySelector("#dataDate").textContent = `数据日期：${data.asOf}（${sourceLabel}）`;
   document.querySelector("#dataSource").textContent = data.source ?? "本地示例数据";
+  syncRefreshControls();
   render();
 }
 
@@ -110,6 +120,82 @@ async function fetchDashboardData() {
   }
   const fallback = await fetch("./data/industry-sample.json", { cache: "no-store" });
   return fallback.json();
+}
+
+function readRefreshConfig() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(refreshConfigKey) ?? "{}");
+    return {
+      ...refreshDefaults,
+      ...stored,
+      limit: normalizeIndustryLimit(stored.limit ?? state.candidateCoverage.industries),
+      fundsPerIndustry: normalizeCandidateLimit(
+        stored.fundsPerIndustry ?? state.candidateCoverage.fundsPerIndustry,
+      ),
+    };
+  } catch (error) {
+    console.warn("Refresh config unavailable.", error);
+    return {
+      ...refreshDefaults,
+      limit: normalizeIndustryLimit(state.candidateCoverage.industries),
+      fundsPerIndustry: normalizeCandidateLimit(state.candidateCoverage.fundsPerIndustry),
+    };
+  }
+}
+
+function normalizeIndustryLimit(value) {
+  const number = Number.parseInt(value, 10);
+  if (!Number.isFinite(number)) return refreshDefaults.limit;
+  return Math.max(1, Math.min(50, number));
+}
+
+function normalizeCandidateLimit(value) {
+  const number = Number.parseInt(value, 10);
+  if (!Number.isFinite(number)) return refreshDefaults.fundsPerIndustry;
+  return Math.max(1, Math.min(30, number));
+}
+
+function syncRefreshControls() {
+  const config = readRefreshConfig();
+  document.querySelector("#fundCandidateLimit").value = config.fundsPerIndustry;
+  const coverage = state.candidateCoverage ?? {};
+  document.querySelector("#refreshStatus").textContent = coverage.candidateCount
+    ? `当前每行业最多 ${coverage.fundsPerIndustry} 只，候选 ${coverage.candidateCount} 只；修改后点击刷新会重建数据。`
+    : "修改后点击刷新，会重新拉取真实数据并更新页面。";
+}
+
+async function refreshLiveData() {
+  const button = document.querySelector("#refreshDataButton");
+  const status = document.querySelector("#refreshStatus");
+  const fundsPerIndustry = normalizeCandidateLimit(document.querySelector("#fundCandidateLimit").value);
+  const config = {
+    ...refreshDefaults,
+    limit: normalizeIndustryLimit(state.candidateCoverage.industries),
+    fundsPerIndustry,
+  };
+  localStorage.setItem(refreshConfigKey, JSON.stringify(config));
+  button.disabled = true;
+  button.textContent = "刷新中";
+  status.textContent = "正在拉取行业、基金和回测数据，扩大候选池时可能需要几分钟。";
+  try {
+    const response = await fetch("./api/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+    if (!response.ok) {
+      throw new Error(response.status === 404 ? "当前静态服务不支持刷新接口" : `刷新失败：${response.status}`);
+    }
+    const result = await response.json();
+    if (!result.ok) throw new Error(result.error ?? "刷新失败");
+    status.textContent = `刷新完成：每行业 ${fundsPerIndustry} 只候选，正在更新页面。`;
+    await loadData();
+  } catch (error) {
+    status.textContent = `${error.message}。请使用 python3 scripts/serve_dashboard.py 启动看板后再刷新。`;
+  } finally {
+    button.disabled = false;
+    button.textContent = "刷新数据";
+  }
 }
 
 function getVisibleIndustries() {
@@ -621,5 +707,11 @@ document.querySelector("#riskSelect").addEventListener("change", (event) => {
   state.riskProfile = event.target.value;
   render();
 });
+
+document.querySelector("#fundCandidateLimit").addEventListener("change", (event) => {
+  event.target.value = normalizeCandidateLimit(event.target.value);
+});
+
+document.querySelector("#refreshDataButton").addEventListener("click", refreshLiveData);
 
 loadData();

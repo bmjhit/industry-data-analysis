@@ -30,6 +30,10 @@ select {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -138,6 +142,52 @@ main {
   border: 0;
   outline: 0;
   color: var(--ink);
+}
+
+.refresh-panel {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 190px 120px minmax(220px, 1.4fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.number-field {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.number-field input {
+  height: 38px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: #fff;
+}
+
+#refreshDataButton {
+  height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--green);
+  color: #fff;
+  font-weight: 800;
+}
+
+#refreshDataButton:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.refresh-status {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 select {
@@ -537,6 +587,7 @@ li {
   }
 
   .control-strip,
+  .refresh-panel,
   .summary-grid,
   .metric-grid,
   .daily-picks,
@@ -553,6 +604,7 @@ li {
 
 @media (max-width: 640px) {
   .control-strip,
+  .refresh-panel,
   .summary-grid,
   .metric-grid,
   .daily-picks,

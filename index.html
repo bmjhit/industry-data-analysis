@@ -38,6 +38,19 @@
         </select>
       </section>
 
+      <section class="panel refresh-panel" aria-label="数据刷新">
+        <div>
+          <p class="eyebrow">数据参数</p>
+          <h2>候选基金池</h2>
+        </div>
+        <label class="number-field">
+          <span>每行业候选</span>
+          <input id="fundCandidateLimit" type="number" min="1" max="30" step="1" value="12" />
+        </label>
+        <button id="refreshDataButton" type="button">刷新数据</button>
+        <p id="refreshStatus" class="refresh-status">修改后点击刷新，会重新拉取真实数据并更新页面。</p>
+      </section>
+
       <section class="summary-grid" aria-label="市场摘要">
         <article>
           <span>强势行业</span>
