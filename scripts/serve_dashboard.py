@@ -31,13 +31,13 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_POST(self) -> None:  # noqa: N802 - http.server API
-        if self.path != "/api/refresh":
+        if self.path not in {"/api/candidate-view", "/api/refresh"}:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
             payload = json.loads(self.rfile.read(length) or b"{}")
-            result = refresh_data(payload)
+            result = cached_candidate_view(payload) if self.path == "/api/candidate-view" else refresh_data(payload)
             self.write_json(HTTPStatus.OK, result)
         except Exception as exc:  # noqa: BLE001 - return readable UI error
             self.write_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"ok": False, "error": str(exc)})
@@ -49,6 +49,39 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+
+def cached_candidate_view(payload: dict[str, Any]) -> dict[str, Any]:
+    requested = clamp_int(payload.get("fundsPerIndustry"), 12, 1, 30)
+    live_path = ROOT / "data" / "industry-live.json"
+    if not live_path.exists():
+        raise FileNotFoundError("暂无本地数据缓存，请先更新数据缓存")
+    with live_path.open("r", encoding="utf-8") as handle:
+        data = json.load(handle)
+
+    industries = data.get("industries", [])
+    cached_maximum = max((len(item.get("candidateFunds", [])) for item in industries), default=0)
+    applied = min(requested, cached_maximum)
+    for industry in industries:
+        industry["candidateFunds"] = industry.get("candidateFunds", [])[:applied]
+
+    coverage = data.setdefault("candidateCoverage", {})
+    coverage.update(
+        {
+            "cacheLimit": cached_maximum,
+            "requestedFundsPerIndustry": requested,
+            "fundsPerIndustry": applied,
+            "candidateCount": sum(len(item.get("candidateFunds", [])) for item in industries),
+            "mode": "local-cache-view",
+        }
+    )
+    return {
+        "ok": True,
+        "data": data,
+        "cachedMaximum": cached_maximum,
+        "appliedFundsPerIndustry": applied,
+        "limitedByCache": requested > cached_maximum,
+    }
 
 
 def refresh_data(payload: dict[str, Any]) -> dict[str, Any]:

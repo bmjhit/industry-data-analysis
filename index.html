@@ -47,8 +47,11 @@
           <span>每行业候选</span>
           <input id="fundCandidateLimit" type="number" min="1" max="30" step="1" value="12" />
         </label>
-        <button id="refreshDataButton" type="button">刷新数据</button>
-        <p id="refreshStatus" class="refresh-status">修改后点击刷新，会重新拉取真实数据并更新页面。</p>
+        <div class="refresh-actions">
+          <button id="applyCacheButton" type="button">应用缓存</button>
+          <button id="refreshDataButton" type="button">更新缓存</button>
+        </div>
+        <p id="refreshStatus" class="refresh-status">当前候选缓存：--</p>
       </section>
 
       <section class="summary-grid" aria-label="市场摘要">

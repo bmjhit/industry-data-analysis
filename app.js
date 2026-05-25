@@ -86,12 +86,19 @@ const getSignal = (score) => {
 async function loadData() {
   const data = await fetchDashboardData();
   const backtest = await fetchBacktestData();
+  applyDashboardData(data, backtest);
+}
+
+function applyDashboardData(data, backtest = state.backtest) {
+  const selectedId = state.selectedIndustryId;
   state.industries = data.industries;
   state.allocations = data.allocations;
   state.fundSummary = data.fundSummary ?? {};
   state.candidateCoverage = data.candidateCoverage ?? {};
   state.backtest = backtest;
-  state.selectedIndustryId = data.industries[0].id;
+  state.selectedIndustryId = data.industries.some((industry) => industry.id === selectedId)
+    ? selectedId
+    : data.industries[0].id;
   const sourceLabel = data.isSample ? "示例" : "真实";
   document.querySelector("#dataDate").textContent = `数据日期：${data.asOf}（${sourceLabel}）`;
   document.querySelector("#dataSource").textContent = data.source ?? "本地示例数据";
@@ -160,12 +167,46 @@ function syncRefreshControls() {
   document.querySelector("#fundCandidateLimit").value = config.fundsPerIndustry;
   const coverage = state.candidateCoverage ?? {};
   document.querySelector("#refreshStatus").textContent = coverage.candidateCount
-    ? `当前每行业最多 ${coverage.fundsPerIndustry} 只，候选 ${coverage.candidateCount} 只；修改后点击刷新会重建数据。`
-    : "修改后点击刷新，会重新拉取真实数据并更新页面。";
+    ? `缓存上限 ${coverage.cacheLimit ?? coverage.fundsPerIndustry} 只/行业；当前展示 ${coverage.fundsPerIndustry} 只/行业，共 ${coverage.candidateCount} 只。`
+    : "当前候选缓存：--";
+}
+
+function setRefreshBusy(isBusy, label = "") {
+  const applyButton = document.querySelector("#applyCacheButton");
+  const updateButton = document.querySelector("#refreshDataButton");
+  applyButton.disabled = isBusy;
+  updateButton.disabled = isBusy;
+  applyButton.textContent = isBusy && label === "cache" ? "加载中" : "应用缓存";
+  updateButton.textContent = isBusy && label === "update" ? "更新中" : "更新缓存";
+}
+
+async function applyCachedCandidates() {
+  const status = document.querySelector("#refreshStatus");
+  const fundsPerIndustry = normalizeCandidateLimit(document.querySelector("#fundCandidateLimit").value);
+  localStorage.setItem(refreshConfigKey, JSON.stringify({ ...readRefreshConfig(), fundsPerIndustry }));
+  setRefreshBusy(true, "cache");
+  status.textContent = "正在载入本地候选缓存。";
+  try {
+    const response = await fetch("./api/candidate-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fundsPerIndustry }),
+    });
+    if (!response.ok) throw new Error(response.status === 404 ? "当前服务不支持缓存接口" : `缓存加载失败：${response.status}`);
+    const result = await response.json();
+    if (!result.ok) throw new Error(result.error ?? "缓存加载失败");
+    applyDashboardData(result.data);
+    if (result.limitedByCache) {
+      status.textContent = `缓存最多支持 ${result.cachedMaximum} 只/行业；需要更多候选时请更新缓存。`;
+    }
+  } catch (error) {
+    status.textContent = `${error.message}。请使用看板服务启动页面。`;
+  } finally {
+    setRefreshBusy(false);
+  }
 }
 
 async function refreshLiveData() {
-  const button = document.querySelector("#refreshDataButton");
   const status = document.querySelector("#refreshStatus");
   const fundsPerIndustry = normalizeCandidateLimit(document.querySelector("#fundCandidateLimit").value);
   const config = {
@@ -174,9 +215,8 @@ async function refreshLiveData() {
     fundsPerIndustry,
   };
   localStorage.setItem(refreshConfigKey, JSON.stringify(config));
-  button.disabled = true;
-  button.textContent = "刷新中";
-  status.textContent = "正在拉取行业、基金和回测数据，扩大候选池时可能需要几分钟。";
+  setRefreshBusy(true, "update");
+  status.textContent = "正在更新真实数据缓存与回测，可能需要几分钟。";
   try {
     const response = await fetch("./api/refresh", {
       method: "POST",
@@ -188,13 +228,12 @@ async function refreshLiveData() {
     }
     const result = await response.json();
     if (!result.ok) throw new Error(result.error ?? "刷新失败");
-    status.textContent = `刷新完成：每行业 ${fundsPerIndustry} 只候选，正在更新页面。`;
+    status.textContent = `缓存更新完成：每行业 ${fundsPerIndustry} 只候选。`;
     await loadData();
   } catch (error) {
     status.textContent = `${error.message}。请使用 python3 scripts/serve_dashboard.py 启动看板后再刷新。`;
   } finally {
-    button.disabled = false;
-    button.textContent = "刷新数据";
+    setRefreshBusy(false);
   }
 }
 
@@ -710,7 +749,10 @@ document.querySelector("#riskSelect").addEventListener("change", (event) => {
 
 document.querySelector("#fundCandidateLimit").addEventListener("change", (event) => {
   event.target.value = normalizeCandidateLimit(event.target.value);
+  applyCachedCandidates();
 });
+
+document.querySelector("#applyCacheButton").addEventListener("click", applyCachedCandidates);
 
 document.querySelector("#refreshDataButton").addEventListener("click", refreshLiveData);
 

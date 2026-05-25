@@ -146,7 +146,7 @@ main {
 
 .refresh-panel {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) 190px 120px minmax(220px, 1.4fr);
+  grid-template-columns: minmax(160px, 1fr) 150px 212px minmax(220px, 1.4fr);
   gap: 14px;
   align-items: center;
   margin-top: 14px;
@@ -170,18 +170,33 @@ main {
   background: #fff;
 }
 
-#refreshDataButton {
+.refresh-actions {
+  display: grid;
+  grid-template-columns: 102px 102px;
+  gap: 8px;
+}
+
+.refresh-actions button {
   height: 38px;
   border: 0;
   border-radius: 6px;
-  background: var(--green);
-  color: #fff;
   font-weight: 800;
 }
 
-#refreshDataButton:disabled {
+.refresh-actions button:disabled {
   cursor: progress;
   opacity: 0.65;
+}
+
+#applyCacheButton {
+  background: var(--green);
+  color: #fff;
+}
+
+#refreshDataButton {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
 }
 
 .refresh-status {
