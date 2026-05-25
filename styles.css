@@ -440,6 +440,7 @@ li {
 }
 
 .daily-panel,
+.purchase-panel,
 .short-panel,
 .backtest-panel,
 .fund-panel,
@@ -472,6 +473,155 @@ li {
 .pick-card p {
   margin-top: 10px;
   color: var(--muted);
+}
+
+.record-purchase {
+  height: 32px;
+  margin-top: 12px;
+  padding: 0 10px;
+  border: 1px solid var(--green);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.secondary-action,
+.primary-action {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.secondary-action {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+}
+
+.primary-action {
+  border: 0;
+  background: var(--green);
+  color: #fff;
+}
+
+.purchase-form {
+  display: grid;
+  grid-template-columns: 170px 172px 170px minmax(180px, 1fr) 106px;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.purchase-form label:not(.track-field) {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.purchase-form input:not([type="checkbox"]) {
+  height: 38px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.track-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 38px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.track-field input {
+  width: 16px;
+  height: 16px;
+}
+
+.purchase-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+
+.purchase-summary article {
+  min-height: 82px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcf9;
+}
+
+.purchase-summary span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.purchase-summary strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 23px;
+}
+
+.purchase-grid {
+  display: grid;
+  grid-template-columns: minmax(380px, 1.5fr) minmax(250px, 0.8fr);
+  gap: 18px;
+}
+
+.purchase-history {
+  display: grid;
+  gap: 8px;
+}
+
+.purchase-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 90px 104px 104px 36px;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fbfcf9;
+  font-size: 13px;
+}
+
+.purchase-row strong {
+  display: block;
+  line-height: 1.4;
+}
+
+.delete-purchase {
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--muted);
+}
+
+.optimization {
+  min-height: 100px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcf9;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.optimization ul {
+  margin-top: 8px;
 }
 
 .short-picks {
@@ -603,13 +753,20 @@ li {
 
   .control-strip,
   .refresh-panel,
+  .purchase-form,
   .summary-grid,
   .metric-grid,
   .daily-picks,
   .backtest-grid,
   .fund-summary-grid,
+  .purchase-summary,
   .allocation-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .purchase-grid,
+  .purchase-row {
+    grid-template-columns: 1fr;
   }
 
   .period-tabs {
@@ -620,12 +777,14 @@ li {
 @media (max-width: 640px) {
   .control-strip,
   .refresh-panel,
+  .purchase-form,
   .summary-grid,
   .metric-grid,
   .daily-picks,
   .backtest-grid,
   .fund-summary-grid,
-  .allocation-grid {
+  .allocation-grid,
+  .purchase-summary {
     grid-template-columns: 1fr;
   }
 

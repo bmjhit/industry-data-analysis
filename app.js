@@ -7,6 +7,7 @@ const state = {
   fundSummary: {},
   candidateCoverage: {},
   backtest: null,
+  purchaseEvaluation: null,
 };
 
 const refreshConfigKey = "industryDashboardRefreshConfig";
@@ -92,6 +93,7 @@ async function loadData() {
   if (displayLimit !== state.candidateCoverage.fundsPerIndustry) {
     await applyCachedCandidates();
   }
+  await loadPurchaseEvaluation();
 }
 
 function applyDashboardData(data, backtest = state.backtest) {
@@ -132,6 +134,80 @@ async function fetchDashboardData() {
   }
   const fallback = await fetch("./data/industry-sample.json", { cache: "no-store" });
   return fallback.json();
+}
+
+async function loadPurchaseEvaluation(force = false) {
+  const status = document.querySelector("#purchaseStatus");
+  if (force) status.textContent = "正在更新买入记录评估。";
+  try {
+    const response = await fetch("./api/evaluate-purchases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force }),
+    });
+    if (!response.ok) throw new Error("评估服务不可用");
+    const result = await response.json();
+    if (!result.ok) throw new Error(result.error ?? "评估失败");
+    state.purchaseEvaluation = result.evaluation;
+    status.textContent = result.cached ? "已加载今日评估缓存。" : "今日评估已更新。";
+  } catch (error) {
+    state.purchaseEvaluation = null;
+    status.textContent = `${error.message}，请使用本地看板服务。`;
+  }
+  renderPurchasePanel();
+}
+
+function localToday() {
+  return new Date().toLocaleDateString("sv-SE");
+}
+
+const formatMoney = (value) =>
+  Number.isFinite(Number(value))
+    ? Number(value).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : "--";
+
+async function addPurchase(event) {
+  event.preventDefault();
+  const status = document.querySelector("#purchaseStatus");
+  const payload = {
+    code: document.querySelector("#purchaseCode").value.trim(),
+    buyDate: document.querySelector("#purchaseDate").value,
+    amount: document.querySelector("#purchaseAmount").value,
+    trackStrategy: document.querySelector("#trackStrategy").checked,
+  };
+  status.textContent = "正在保存并评估买入记录。";
+  try {
+    const response = await fetch("./api/purchases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error ?? "保存失败");
+    state.purchaseEvaluation = result.evaluation;
+    document.querySelector("#purchaseAmount").value = "";
+    status.textContent = result.purchase.strategySnapshot?.tracked
+      ? "买入记录已保存，并纳入策略成功率跟踪。"
+      : "买入记录已保存；未匹配买入日推荐信号，仅统计持仓盈亏。";
+    renderPurchasePanel();
+  } catch (error) {
+    status.textContent = `${error.message}。`;
+  }
+}
+
+async function deletePurchase(identifier) {
+  const status = document.querySelector("#purchaseStatus");
+  status.textContent = "正在删除记录并更新评估。";
+  try {
+    const response = await fetch(`./api/purchases/${identifier}`, { method: "DELETE" });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error ?? "删除失败");
+    state.purchaseEvaluation = result.evaluation;
+    status.textContent = "记录已删除。";
+    renderPurchasePanel();
+  } catch (error) {
+    status.textContent = `${error.message}。`;
+  }
 }
 
 function readRefreshConfig() {
@@ -562,6 +638,60 @@ function renderFundSummary() {
     : "暂无候选池覆盖数据";
 }
 
+function renderPurchasePanel() {
+  const evaluation = state.purchaseEvaluation;
+  const summary = document.querySelector("#purchaseSummary");
+  const history = document.querySelector("#purchaseHistory");
+  const optimization = document.querySelector("#strategyOptimization");
+  if (!evaluation) {
+    summary.innerHTML = '<div class="empty-state">暂无买入评估数据</div>';
+    history.innerHTML = '<div class="empty-state">暂无买入记录</div>';
+    optimization.textContent = "暂无策略评估样本。";
+    return;
+  }
+  const successRate =
+    evaluation.successRate === null || evaluation.successRate === undefined
+      ? "--"
+      : `${evaluation.successRate.toFixed(1)}%`;
+  summary.innerHTML = `
+    <article><span>累计投入</span><strong>${formatMoney(evaluation.investedAmount)}</strong></article>
+    <article><span>当前盈亏</span><strong class="${signalClass(evaluation.currentProfit ?? 0)}">${formatMoney(evaluation.currentProfit)}</strong></article>
+    <article><span>当前收益率</span><strong class="${signalClass(evaluation.currentReturn ?? 0)}">${evaluation.currentReturn == null ? "--" : formatPercent(evaluation.currentReturn)}</strong></article>
+    <article><span>策略成功率</span><strong>${successRate}</strong></article>
+  `;
+  const purchases = evaluation.purchases ?? [];
+  history.innerHTML = purchases.length
+    ? purchases
+        .map((purchase) => {
+          const tracked = purchase.strategyStatus === "evaluated"
+            ? `${purchase.strategySuccess ? "命中" : "未命中"} ${formatPercent(purchase.forwardReturn10 ?? 0)}`
+            : purchase.strategyStatus === "pending"
+              ? "信号待评估"
+              : "不纳入策略";
+          return `
+            <div class="purchase-row">
+              <div><strong>${purchase.name}</strong><span class="muted">${purchase.code} · ${purchase.buyDate}</span></div>
+              <span>${formatMoney(purchase.amount)}</span>
+              <span class="${signalClass(purchase.currentReturn ?? 0)}">${purchase.currentReturn == null ? "--" : formatPercent(purchase.currentReturn)}</span>
+              <span>${tracked}</span>
+              <button class="delete-purchase" data-delete-purchase="${purchase.id}" type="button" title="删除">X</button>
+            </div>
+          `;
+        })
+        .join("")
+    : '<div class="empty-state">暂无买入记录</div>';
+
+  const insight = evaluation.optimization ?? {};
+  if (insight.status === "ready") {
+    optimization.innerHTML = `
+      <p>已评估 ${evaluation.evaluatedCount} 笔策略信号，成功 ${evaluation.successCount} 笔。</p>
+      <ul>${(insight.suggestions ?? []).map((suggestion) => `<li>${suggestion}</li>`).join("")}</ul>
+    `;
+  } else {
+    optimization.textContent = insight.message ?? "尚无足够的成熟策略样本。";
+  }
+}
+
 function summarizeFundsForRisk(riskProfile) {
   const allFunds = state.industries.flatMap((industry) => industry.candidateFunds ?? []);
   const rules = riskRules[riskProfile] ?? riskRules.balanced;
@@ -630,6 +760,7 @@ function renderDailyRecommendations(industries) {
                 <span>质量 ${(quality.qualityScore ?? 0).toFixed(1)}</span>
               </div>
               <p>建议周期：${fund.holdingPeriod}</p>
+              <button class="record-purchase" data-record-purchase="${fund.code}" type="button">记录买入</button>
             </article>
           `;
         })
@@ -724,6 +855,7 @@ function render() {
   renderDetail(industries);
   renderAllocations();
   renderFundSummary();
+  renderPurchasePanel();
   renderDailyRecommendations(industries);
   renderShortTermRecommendations(industries);
 }
@@ -750,6 +882,22 @@ document.querySelector("#searchInput").addEventListener("input", render);
 document.querySelector("#riskSelect").addEventListener("change", (event) => {
   state.riskProfile = event.target.value;
   render();
+});
+
+document.querySelector("#purchaseDate").value = localToday();
+document.querySelector("#purchaseDate").max = localToday();
+document.querySelector("#purchaseForm").addEventListener("submit", addPurchase);
+document.querySelector("#evaluatePurchasesButton").addEventListener("click", () => loadPurchaseEvaluation(true));
+document.querySelector("#purchaseHistory").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-delete-purchase]");
+  if (button) deletePurchase(button.dataset.deletePurchase);
+});
+document.querySelector("#dailyFundPicks").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-record-purchase]");
+  if (!button) return;
+  document.querySelector("#purchaseCode").value = button.dataset.recordPurchase;
+  document.querySelector("#purchaseDate").value = localToday();
+  document.querySelector("#purchaseAmount").focus();
 });
 
 document.querySelector("#fundCandidateLimit").addEventListener("change", (event) => {

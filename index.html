@@ -84,6 +84,47 @@
         <div id="dailyFundPicks" class="daily-picks"></div>
       </section>
 
+      <section class="panel purchase-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">买入记录</p>
+            <h2>策略验证账本</h2>
+          </div>
+          <button id="evaluatePurchasesButton" class="secondary-action" type="button">更新评估</button>
+        </div>
+        <form id="purchaseForm" class="purchase-form">
+          <label>
+            <span>基金代码</span>
+            <input id="purchaseCode" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="000000" />
+          </label>
+          <label>
+            <span>买入日期</span>
+            <input id="purchaseDate" name="buyDate" type="date" required />
+          </label>
+          <label>
+            <span>买入金额</span>
+            <input id="purchaseAmount" name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00" />
+          </label>
+          <label class="track-field">
+            <input id="trackStrategy" name="trackStrategy" type="checkbox" checked />
+            <span>记录当日策略信号</span>
+          </label>
+          <button class="primary-action" type="submit">记录买入</button>
+        </form>
+        <p id="purchaseStatus" class="refresh-status"></p>
+        <div id="purchaseSummary" class="purchase-summary"></div>
+        <div class="purchase-grid">
+          <div>
+            <h3>买入明细</h3>
+            <div id="purchaseHistory" class="purchase-history"></div>
+          </div>
+          <div>
+            <h3>策略优化观察</h3>
+            <div id="strategyOptimization" class="optimization"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="panel short-panel">
         <div class="panel-head">
           <div>

@@ -7,3 +7,5 @@ build/
 *.log
 dashboard-live-preview.png
 current-dashboard-ui.png
+data/purchases.json
+data/purchase-evaluation.json
