@@ -15,7 +15,7 @@
 
 ```bash
 python3 -m pip install -r requirements.txt
-python3 scripts/update_data.py --limit 12 --funds-per-industry 12 --fund-scan-limit 120 --exposure-threshold 2.5
+python3 scripts/update_data.py --limit 12 --funds-per-industry 30 --fund-scan-limit 120 --exposure-threshold 2.5
 python3 scripts/backtest_short_term.py
 ```
 
@@ -27,7 +27,7 @@ python3 scripts/serve_dashboard.py 4174
 
 然后打开 `http://localhost:4174/`。页面会优先读取 `data/industry-live.json`，如果该文件不存在或读取失败，会回落到 `data/industry-sample.json` 示例数据。
 
-页面中的“每行业候选”修改后会通过本地 `/api/candidate-view` 自动切换已缓存候选，也可点“应用缓存”再次载入；“更新缓存”通过 `/api/refresh` 重新执行真实数据更新和短线回测，用于扩大缓存上限或更新行情。若仅用 `python3 -m http.server` 启动，页面仍可浏览，但无法调用这两个接口。
+页面默认缓存容量为每行业最多 30 只基金。“每行业候选”只控制当前展示数量，修改后会通过本地 `/api/candidate-view` 自动切换已缓存候选，也可点“应用缓存”再次载入；“更新缓存”始终按 30 只/行业重新执行真实数据更新和短线回测，用于补齐缓存或更新行情。若仅用 `python3 -m http.server` 启动，页面仍可浏览，但无法调用这两个接口。
 
 ## 后续数据接入方向
 

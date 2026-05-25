@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PORT = 4174
+DEFAULT_CACHE_FUNDS_PER_INDUSTRY = 30
 
 
 def clamp_int(value: Any, default: int, lower: int, upper: int) -> int:
@@ -52,7 +53,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 
 def cached_candidate_view(payload: dict[str, Any]) -> dict[str, Any]:
-    requested = clamp_int(payload.get("fundsPerIndustry"), 12, 1, 30)
+    requested = clamp_int(payload.get("fundsPerIndustry"), DEFAULT_CACHE_FUNDS_PER_INDUSTRY, 1, 30)
     live_path = ROOT / "data" / "industry-live.json"
     if not live_path.exists():
         raise FileNotFoundError("暂无本地数据缓存，请先更新数据缓存")
@@ -85,7 +86,12 @@ def cached_candidate_view(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def refresh_data(payload: dict[str, Any]) -> dict[str, Any]:
-    funds_per_industry = clamp_int(payload.get("fundsPerIndustry"), 12, 1, 30)
+    funds_per_industry = clamp_int(
+        payload.get("cacheFundsPerIndustry"),
+        DEFAULT_CACHE_FUNDS_PER_INDUSTRY,
+        1,
+        30,
+    )
     limit = clamp_int(payload.get("limit"), 12, 1, 50)
     fund_scan_limit = clamp_int(payload.get("fundScanLimit"), 120, 0, 1000)
     exposure_threshold = float(payload.get("exposureThreshold", 2.5))

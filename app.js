@@ -12,7 +12,8 @@ const state = {
 const refreshConfigKey = "industryDashboardRefreshConfig";
 const refreshDefaults = {
   limit: 12,
-  fundsPerIndustry: 12,
+  fundsPerIndustry: 30,
+  cacheFundsPerIndustry: 30,
   fundScanLimit: 120,
   exposureThreshold: 2.5,
   runBacktest: true,
@@ -87,6 +88,10 @@ async function loadData() {
   const data = await fetchDashboardData();
   const backtest = await fetchBacktestData();
   applyDashboardData(data, backtest);
+  const displayLimit = readRefreshConfig().fundsPerIndustry;
+  if (displayLimit !== state.candidateCoverage.fundsPerIndustry) {
+    await applyCachedCandidates();
+  }
 }
 
 function applyDashboardData(data, backtest = state.backtest) {
@@ -167,8 +172,8 @@ function syncRefreshControls() {
   document.querySelector("#fundCandidateLimit").value = config.fundsPerIndustry;
   const coverage = state.candidateCoverage ?? {};
   document.querySelector("#refreshStatus").textContent = coverage.candidateCount
-    ? `缓存上限 ${coverage.cacheLimit ?? coverage.fundsPerIndustry} 只/行业；当前展示 ${coverage.fundsPerIndustry} 只/行业，共 ${coverage.candidateCount} 只。`
-    : "当前候选缓存：--";
+    ? `目标缓存上限 ${refreshDefaults.cacheFundsPerIndustry} 只/行业；当前缓存 ${coverage.cacheLimit ?? coverage.fundsPerIndustry} 只/行业，展示 ${coverage.fundsPerIndustry} 只/行业，共 ${coverage.candidateCount} 只。`
+    : `目标缓存上限 ${refreshDefaults.cacheFundsPerIndustry} 只/行业；当前候选缓存：--`;
 }
 
 function setRefreshBusy(isBusy, label = "") {
@@ -216,7 +221,7 @@ async function refreshLiveData() {
   };
   localStorage.setItem(refreshConfigKey, JSON.stringify(config));
   setRefreshBusy(true, "update");
-  status.textContent = "正在更新真实数据缓存与回测，可能需要几分钟。";
+  status.textContent = `正在更新真实数据缓存至每行业 ${config.cacheFundsPerIndustry} 只，并重建回测，可能需要几分钟。`;
   try {
     const response = await fetch("./api/refresh", {
       method: "POST",
@@ -228,7 +233,7 @@ async function refreshLiveData() {
     }
     const result = await response.json();
     if (!result.ok) throw new Error(result.error ?? "刷新失败");
-    status.textContent = `缓存更新完成：每行业 ${fundsPerIndustry} 只候选。`;
+    status.textContent = `缓存更新完成：容量 ${config.cacheFundsPerIndustry} 只/行业，当前展示 ${fundsPerIndustry} 只/行业。`;
     await loadData();
   } catch (error) {
     status.textContent = `${error.message}。请使用 python3 scripts/serve_dashboard.py 启动看板后再刷新。`;

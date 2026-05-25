@@ -943,7 +943,7 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Update live A-share industry dashboard data.")
     parser.add_argument("--limit", type=int, default=20, help="number of top industries to fetch")
-    parser.add_argument("--funds-per-industry", type=int, default=8, help="candidate funds retained for each industry")
+    parser.add_argument("--funds-per-industry", type=int, default=30, help="candidate funds retained for each industry")
     parser.add_argument("--fund-scan-limit", type=int, default=250, help="top ranked funds scanned for holding-through matching")
     parser.add_argument("--exposure-threshold", type=float, default=5.0, help="minimum holding exposure percent for holding-through match")
     args = parser.parse_args()

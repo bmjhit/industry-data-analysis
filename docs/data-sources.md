@@ -15,8 +15,8 @@
 - 基金排行：`fund_open_fund_rank_em(symbol="全部")`
 - 已使用字段：基金代码、基金简称、近 1 月、近 3 月、近 1 年、手续费。
 - 当前候选逻辑：先把细分行业映射到可交易基金常用赛道词，再按基金名称关键词和持仓穿透生成候选，并优先展示近 3 月表现靠前的候选。
-- 候选池参数：`scripts/update_data.py --funds-per-industry 12 --fund-scan-limit 120 --exposure-threshold 2.5` 表示每个行业最多保留 12 只候选，穿透扫描基金排行前 120 只，持仓暴露达到 2.5% 可作为穿透命中。
-- UI 缓存：使用 `python3 scripts/serve_dashboard.py 4174` 启动后，`/api/candidate-view` 会在已有 `industry-live.json` 内按 `fundsPerIndustry` 裁剪候选，不访问远端数据；输入超出缓存上限时需要使用 `/api/refresh` 重新生成数据和回测结果。
+- 候选池参数：`scripts/update_data.py --funds-per-industry 30 --fund-scan-limit 120 --exposure-threshold 2.5` 表示默认缓存每个行业最多 30 只候选，穿透扫描基金排行前 120 只，持仓暴露达到 2.5% 可作为穿透命中。
+- UI 缓存：使用 `python3 scripts/serve_dashboard.py 4174` 启动后，`/api/candidate-view` 会在已有 `industry-live.json` 内按展示数量裁剪候选，不访问远端数据；`/api/refresh` 独立按默认容量 30 只/行业重新生成数据和回测结果。
 - 个基预测：使用 `fund_open_fund_info_em(symbol=基金代码, indicator="单位净值走势")` 获取历史净值，计算 20/60/120 日动量、年化波动、最大回撤、近 60 日胜率、类 Sharpe 指标，再合成上涨概率评分、风险分和综合分。
 - 基金详情：解析东方财富 `pingzhongdata/{基金代码}.js` 中的规模变动、成立日期、基金经理、跟踪误差参考序列等字段。
 - 持仓集中度：使用 `fund_portfolio_hold_em` 获取最新年度持仓，计算前十大持仓占比和单一最大持仓占比。
